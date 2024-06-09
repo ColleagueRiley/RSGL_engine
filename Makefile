@@ -1,6 +1,6 @@
 CC = gcc
 
-LIBS :=-lgdi32 -lm -lopengl32 -lwinmm -ggdb -lm -ltcc
+LIBS :=-lgdi32 -lm -lopengl32 -lwinmm -ggdb -lm
 EXT = .exe
 STATIC =
 
@@ -27,22 +27,44 @@ ifeq ($(detected_OS),Windows)
 	EXT = .exe
 endif
 ifeq ($(detected_OS),Darwin)        # Mac OS X
-	LIBS := -lm -framework Foundation -framework AppKit -framework OpenGL -framework CoreVideo$(STATIC) -ltcc
+	LIBS := -lm -framework Foundation -framework AppKit -framework OpenGL -framework CoreVideo$(STATIC)
 	EXT = 
 endif
 ifeq ($(detected_OS),Linux)
-    LIBS := -lXrandr -lX11 -lm -lGL -ldl -lpthread $(STATIC) -ltcc
+    LIBS := -lXrandr -lX11 -lm -lGL -ldl -lpthread $(STATIC)
 	EXT =
 endif
 
+tinycc:
+	git clone https://repo.or.cz/tinycc.git
+
+tinycc/libtcc.a:
+	make tinycc
+	cd tinycc && ./configure && make
+
 RSGL_engine: source/* include/*
-	$(CC) source/main.c $(LIBS) -I./include -o $@
+	make tinycc/libtcc.a
+	$(CC) source/main.c $(LIBS) -	I./include -I./tinycc tinycc/libtcc.a -o $@
 
 debug:
-	$(CC) source/main.c $(LIBS) -I./include -o RSGL_engine
+	make tinycc/libtcc.a
+	$(CC) source/main.c $(LIBS) -I./include -I./tinycc tinycc/libtcc.a -o RSGL_engine
 	./RSGL_engine test.c
 
 release_example:
 	make RSGL_engine
 	mkdir -p release
+	mkdir -p release/tinycc
+	cp -r tinycc/include tinycc/runmain.o tinycc/libtcc1.a ./release/tinycc
 	cp -r test.c RSGL.h ./RSGL_engine$(EXT) run.sh run.bat SuperEasy.ttf image.png ./release
+
+test:
+	@for header in $(HEADER_FILES); do \
+		while IFS= read -r line; do \
+			if echo $$line | grep -q '^#ifdef [A-Z0-9_]*_IMPLEMENTATION'; then \
+				break; \
+			fi; \
+			echo $$line >> $(OUTPUT_HEADER); \
+		done < $$header; \
+		echo "" >> $(OUTPUT_HEADER); \
+	done

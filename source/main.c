@@ -40,7 +40,7 @@ int main(int argc, char ** argv) {
             }
 
     
-            if (win->event.type == RGFW_mouseButtonPressed && (RSGL_isPressedI(win, RGFW_ShiftR) && !rElEaSeMoDe)) {
+            if (win->event.type == RGFW_mouseButtonPressed && (RSGL_isPressedI(win, RGFW_ControlL) && !rElEaSeMoDe)) {
                 u32 index = 0;
                 for (index = 0; index < RPhys_len; index++) {
                     RPhys_body* body = RPhys_bodies[index];
@@ -92,7 +92,7 @@ int main(int argc, char ** argv) {
 
         RSGL_setTexture(0);
     
-        if (RSGL_isPressedI(win, RGFW_ShiftR) && !rElEaSeMoDe) {
+        if (RSGL_isPressedI(win, RGFW_ControlL) && !rElEaSeMoDe) {
             char* str = RSGL_strFmt("%i, %i", win->event.point.x, win->event.point.y);
             RSGL_drawRect(RSGL_RECT(win->event.point.x, win->event.point.y, 100, 20), RSGL_RGBA(80, 80, 80, 100));
             RSGL_drawText(str, RSGL_CIRCLE(20 + win->event.point.x, win->event.point.y, 20), RSGL_RGB(0, 0, 0));

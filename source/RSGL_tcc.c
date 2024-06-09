@@ -300,6 +300,8 @@ c_file compile_file(char* fileName, RSGL_window* win) {
     file_ptr[len] = '\0';
 
     tcc_add_include_path(tccState, "./");
+    tcc_add_include_path(tccState, "tinycc/include");
+    tcc_add_library_path(tccState, "tinycc");
 
     if (tcc_compile_string(tccState, file_ptr) == -1) {
         files[i].mainFunc = NULL;
