@@ -11,6 +11,8 @@ void error_func(void * user, const char * msg) {
     printf("TCC Error: %s\n", msg);
 }
 
+void* eventFunc = NULL;
+
 void add_RSGL_symbols(TCCState* s) {
     tcc_add_symbol(s, "RSGL_legacy", RSGL_legacy);
     tcc_add_symbol(s, "RSGL_createWindow", RSGL_createWindow);
@@ -21,6 +23,7 @@ void add_RSGL_symbols(TCCState* s) {
     tcc_add_symbol(s, "RSGL_window_clear", RSGL_window_clear);
     tcc_add_symbol(s, "RSGL_window_setMouseStandard", RSGL_window_setMouseStandard);
     tcc_add_symbol(s, "RGFW_isPressedI", RGFW_isPressedI);
+    tcc_add_symbol(s, "RSGL_isPressedI", RSGL_isPressedI);
     tcc_add_symbol(s, "RSGL_wasPressedI", RSGL_wasPressedI);
     tcc_add_symbol(s, "RSGL_isHeldI", RSGL_isHeldI);
     tcc_add_symbol(s, "RSGL_isReleasedI", RSGL_isReleasedI);
@@ -147,21 +150,98 @@ void add_RSGL_symbols(TCCState* s) {
     tcc_add_symbol(s, "RSGL_rectCollidePointF", RSGL_rectCollidePointF);
     tcc_add_symbol(s, "RSGL_rectCollideF", RSGL_rectCollideF);
     tcc_add_symbol(s, "RSGL_pointCollideF", RSGL_pointCollideF);
+    tcc_add_symbol(s, "RGFW_createWindow", RGFW_createWindow);
+    tcc_add_symbol(s, "RGFW_getScreenSize", RGFW_getScreenSize);
+    tcc_add_symbol(s, "RGFW_window_checkEvent", RGFW_window_checkEvent);
+    tcc_add_symbol(s, "RGFW_window_close", RGFW_window_close);
+    tcc_add_symbol(s, "RGFW_window_move", RGFW_window_move);
+    tcc_add_symbol(s, "RGFW_window_moveToMonitor", RGFW_window_moveToMonitor);
+    tcc_add_symbol(s, "RGFW_window_resize", RGFW_window_resize);
+    tcc_add_symbol(s, "RGFW_window_setMinSize", RGFW_window_setMinSize);
+    tcc_add_symbol(s, "RGFW_window_setMaxSize", RGFW_window_setMaxSize);
+    tcc_add_symbol(s, "RGFW_window_maximize", RGFW_window_maximize);
+    tcc_add_symbol(s, "RGFW_window_minimize", RGFW_window_minimize);
+    tcc_add_symbol(s, "RGFW_window_restore", RGFW_window_restore);
+    tcc_add_symbol(s, "RGFW_window_setName", RGFW_window_setName);
+    tcc_add_symbol(s, "RGFW_window_setIcon", RGFW_window_setIcon);
+    tcc_add_symbol(s, "RGFW_window_setMouse", RGFW_window_setMouse);
+    tcc_add_symbol(s, "RGFW_window_setMouseStandard", RGFW_window_setMouseStandard);
+    tcc_add_symbol(s, "RGFW_window_setMouseDefault", RGFW_window_setMouseDefault);
+    tcc_add_symbol(s, "RGFW_window_mouseHold", RGFW_window_mouseHold);
+    tcc_add_symbol(s, "RGFW_window_mouseUnhold", RGFW_window_mouseUnhold);
+    tcc_add_symbol(s, "RGFW_window_hide", RGFW_window_hide);
+    tcc_add_symbol(s, "RGFW_window_show", RGFW_window_show);
+    tcc_add_symbol(s, "RGFW_window_setShouldClose", RGFW_window_setShouldClose);
+    tcc_add_symbol(s, "RGFW_getGlobalMousePoint", RGFW_getGlobalMousePoint);
+    tcc_add_symbol(s, "RGFW_window_showMouse", RGFW_window_showMouse);
+    tcc_add_symbol(s, "RGFW_window_moveMouse", RGFW_window_moveMouse);
+    tcc_add_symbol(s, "RGFW_window_shouldClose", RGFW_window_shouldClose);
+    tcc_add_symbol(s, "RGFW_window_isFullscreen", RGFW_window_isFullscreen);
+    tcc_add_symbol(s, "RGFW_window_isHidden", RGFW_window_isHidden);
+    tcc_add_symbol(s, "RGFW_window_isMinimized", RGFW_window_isMinimized);
+    tcc_add_symbol(s, "RGFW_window_isMaximized", RGFW_window_isMaximized);
+    tcc_add_symbol(s, "RGFW_window_scaleToMonitor", RGFW_window_scaleToMonitor);
+    tcc_add_symbol(s, "RGFW_window_getMonitor", RGFW_window_getMonitor);
+    tcc_add_symbol(s, "RGFW_window_makeCurrent", RGFW_window_makeCurrent);
+    tcc_add_symbol(s, "RGFW_isPressedI", RGFW_isPressedI);
+    tcc_add_symbol(s, "RGFW_wasPressedI", RGFW_wasPressedI);
+    tcc_add_symbol(s, "RGFW_isHeldI", RGFW_isHeldI);
+    tcc_add_symbol(s, "RGFW_isReleasedI", RGFW_isReleasedI);
+    tcc_add_symbol(s, "RGFW_keyCodeTokeyStr", RGFW_keyCodeTokeyStr);
+    tcc_add_symbol(s, "RGFW_keyStrToKeyCode", RGFW_keyStrToKeyCode);
+    tcc_add_symbol(s, "RGFW_readClipboard", RGFW_readClipboard);
+    tcc_add_symbol(s, "RGFW_writeClipboard", RGFW_writeClipboard);
+    tcc_add_symbol(s, "RGFW_keystrToChar", RGFW_keystrToChar);
+    tcc_add_symbol(s, "RGFW_createThread", RGFW_createThread);
+    tcc_add_symbol(s, "RGFW_cancelThread", RGFW_cancelThread);
+    tcc_add_symbol(s, "RGFW_joinThread", RGFW_joinThread);
+    tcc_add_symbol(s, "RGFW_registerJoystick", RGFW_registerJoystick);
+    tcc_add_symbol(s, "RGFW_registerJoystickF", RGFW_registerJoystickF);
+    tcc_add_symbol(s, "RGFW_isPressedJS", RGFW_isPressedJS);
+    tcc_add_symbol(s, "RGFW_window_swapBuffers", RGFW_window_swapBuffers);
+    tcc_add_symbol(s, "RGFW_window_swapInterval", RGFW_window_swapInterval);
+    tcc_add_symbol(s, "RGFW_window_setGPURender", RGFW_window_setGPURender);
+    tcc_add_symbol(s, "RGFW_getTime", RGFW_getTime);
+    tcc_add_symbol(s, "RGFW_getTimeNS", RGFW_getTimeNS);
+    tcc_add_symbol(s, "RGFW_sleep", RGFW_sleep);
 }
 
-void* compile_file(char* fileName) {
-    static void* lastFunc = NULL;
-    static struct stat lastFileStat;
+typedef struct c_file {
+    char* fileName;
+    void (*mainFunc)();
+    void (*eventFunc)(RGFW_Event);
+    struct stat lastFileStat;
+    bool inited;
+} c_file;
+
+c_file files[200];
+size_t files_len = 0;
+
+c_file compile_file(char* fileName, RSGL_window* win) {
+    u32 i;
+    for (i = 0; i < files_len; i++) {
+        if (strcmp(files->fileName, fileName) == 0)
+            break;
+    }
+
+    if (files_len == i) {
+        files[i].fileName = fileName;
+        files[i].mainFunc = NULL;
+        files[i].eventFunc = NULL;
+        files[i].inited = false;
+        files_len++;
+    }
+
     struct stat fileStat;
     time_t mtime;
 
     if (stat(fileName, &fileStat) < 0) {
         perror(fileName);
-        return NULL;
+        return files[i];
     }
     
-    if (fileStat.st_mtime == lastFileStat.st_mtime && lastFunc != NULL) {
-        return lastFunc;
+    if (fileStat.st_mtime == files[i].lastFileStat.st_mtime && files[i].inited != false) {
+        return files[i];
     }
      
     if (tccState != NULL)
@@ -185,7 +265,12 @@ void* compile_file(char* fileName) {
     tcc_add_include_path(tccState, "./include");
     tcc_add_include_path(tccState, "./");
 
-    tcc_compile_string(tccState, file_ptr);
+    if (tcc_compile_string(tccState, file_ptr) == -1) {
+        files[i].mainFunc = NULL;
+        files[i].eventFunc = NULL;
+        
+        return files[i];
+    }
 
     add_RSGL_symbols(tccState);    
 
@@ -193,9 +278,17 @@ void* compile_file(char* fileName) {
 
     free(file_ptr);
 
-    lastFunc = tcc_get_symbol(tccState, "main");
+    void* initFunc = tcc_get_symbol(tccState, "init");
+    if (initFunc != NULL)
+        ((void (*)()) initFunc)(win);
 
-    lastFileStat = fileStat;
+    files[i].eventFunc = tcc_get_symbol(tccState, "eventLoop");
 
-    return lastFunc;
+    files[i].mainFunc = tcc_get_symbol(tccState, "main");
+
+    files[i].lastFileStat = fileStat;
+
+    files[i].inited = true;
+
+    return files[i];
 }
