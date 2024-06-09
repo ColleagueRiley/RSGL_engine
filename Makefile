@@ -45,4 +45,4 @@ debug:
 release_example:
 	make RSGL_engine
 	mkdir -p release
-	cp -r test.c include/* ./RSGL_engine$(EXT) run.sh run.bat SuperEasy.ttf image.png ./release
+	cp -r test.c RSGL.h ./RSGL_engine$(EXT) run.sh run.bat SuperEasy.ttf image.png ./release
