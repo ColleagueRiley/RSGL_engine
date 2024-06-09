@@ -1,14 +1,19 @@
-#include <RSGL.h>
+#include "RSGL.h"
 #include <stdio.h>
 
 
 RSGL_image image;
+
+RPhys_body body;
 
 void init(RGFW_window* win) {
     RGFW_window_resize(win, RGFW_AREA(800, 800));
     RGFW_window_setName(win, "my game");
     RSGL_window_setIconImage(win, "image.png");
     image = RSGL_loadImage("image.png");
+    
+    body = (RPhys_body){RPhys_shape_loadPolygon(RSGL_RECTF(200, 20, 200, 200), 8, 0.90f, CONCRETE_DRY), true};
+    RPhys_addBody(&body);
 }
 
 u8 b = 0;
@@ -21,18 +26,22 @@ void eventLoop(RGFW_Event event) {
 
 int main() { 
     static u8 i = 0;
-    static RSGL_rect rect = RSGL_RECT(20, 200, 200, 200);
     RSGL_setTexture(image.tex);
-    RSGL_drawPolygon(rect, 11, RSGL_RGB(255, 0, 0)); 
+    RSGL_drawPolygonF(RPhys_shape_getRect(body.shape), body.shape.vertexCount, RSGL_RGB(255, 0, 0));
     RSGL_drawRect(RSGL_RECT(120 + i, 450 + b, 200, 200), RSGL_RGB(255, 0, 0)); 
     i++;
-
+    
     if (RSGL_isPressedI(NULL, RGFW_Up))
-        rect.y -= 5;
-    if (RSGL_isPressedI(NULL, RGFW_Down))
-        rect.y += 5;
+        body.velocity.y = -0.5;
+    else if (RSGL_isPressedI(NULL, RGFW_Down))
+        body.velocity.y = 0.5;
+    else
+        body.velocity.y = 0;
+    
     if (RSGL_isPressedI(NULL, RGFW_Left))
-        rect.x -= 5;    
-    if (RSGL_isPressedI(NULL, RGFW_Right))
-        rect.x += 5;
+        body.velocity.x = -0.5;    
+    else if (RSGL_isPressedI(NULL, RGFW_Right))
+        body.velocity.x = 0.5;
+    else
+        body.velocity.x = 0;
 }   

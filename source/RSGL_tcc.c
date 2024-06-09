@@ -204,6 +204,43 @@ void add_RSGL_symbols(TCCState* s) {
     tcc_add_symbol(s, "RGFW_getTime", RGFW_getTime);
     tcc_add_symbol(s, "RGFW_getTimeNS", RGFW_getTimeNS);
     tcc_add_symbol(s, "RGFW_sleep", RGFW_sleep);
+    tcc_add_symbol(s, "RPhys_addVector2", RPhys_addVector2);
+    tcc_add_symbol(s, "RPhys_subtractVector2", RPhys_subtractVector2);
+    tcc_add_symbol(s, "RPhys_multiplyVector2", RPhys_multiplyVector2);
+    tcc_add_symbol(s, "RPhys_divideVector2", RPhys_divideVector2);
+    tcc_add_symbol(s, "RPhys_init", RPhys_init);
+    tcc_add_symbol(s, "RPhys_run", RPhys_run);
+    tcc_add_symbol(s, "RPhys_step", RPhys_step);
+    tcc_add_symbol(s, "RPhys_free", RPhys_free);
+    tcc_add_symbol(s, "RPhys_setGravity", RPhys_setGravity);
+    tcc_add_symbol(s, "RPhys_setAirDensity", RPhys_setAirDensity);
+    tcc_add_symbol(s, "RPhys_angledForce", RPhys_angledForce);
+    tcc_add_symbol(s, "RPhys_time", RPhys_time);
+    tcc_add_symbol(s, "RPhys_circleCollideRect", RPhys_circleCollideRect);
+    tcc_add_symbol(s, "RPhys_circleCollide", RPhys_circleCollide);
+    tcc_add_symbol(s, "RPhys_rectCollide", RPhys_rectCollide);
+    tcc_add_symbol(s, "RPhys_shapeCollide", RPhys_shapeCollide);
+    tcc_add_symbol(s, "RPhys_triangleToRect", RPhys_triangleToRect);
+    tcc_add_symbol(s, "RPhys_shapeRect", RPhys_shapeRect);
+    tcc_add_symbol(s, "RPhys_MuTable", RPhys_MuTable);
+    tcc_add_symbol(s, "RPhys_shape_loadRect", RPhys_shape_loadRect);
+    tcc_add_symbol(s, "RPhys_shape_loadPolygon", RPhys_shape_loadPolygon);
+    tcc_add_symbol(s, "RPhys_shape_loadCircle", RPhys_shape_loadCircle);
+    tcc_add_symbol(s, "RPhys_shape_loadTriangle", RPhys_shape_loadTriangle);
+    tcc_add_symbol(s, "RPhys_shape_loadPoint", RPhys_shape_loadPoint);
+    tcc_add_symbol(s, "RPhys_shape_getRect", RPhys_shape_getRect);
+    tcc_add_symbol(s, "RPhys_shape_getPolyRect", RPhys_shape_getPolyRect);
+    tcc_add_symbol(s, "RPhys_shape_getCircle", RPhys_shape_getCircle);
+    tcc_add_symbol(s, "RPhys_shape_getTriangle", RPhys_shape_getTriangle);
+    tcc_add_symbol(s, "RPhys_shape_getPoint", RPhys_shape_getPoint);
+    tcc_add_symbol(s, "RPhys_body_getAcceleration", RPhys_body_getAcceleration);
+    tcc_add_symbol(s, "RPhys_addBody", RPhys_addBody);
+    tcc_add_symbol(s, "RPhys_addBodies", RPhys_addBodies);
+    tcc_add_symbol(s, "RPhys_removeBody", RPhys_removeBody);
+    tcc_add_symbol(s, "RPhys_drawBodies", RPhys_drawBodies);
+    tcc_add_symbol(s, "RPhys_drawBodiesColors", RPhys_drawBodiesColors);
+    tcc_add_symbol(s, "RPhys_drawBodiesTextures", RPhys_drawBodiesTextures);
+    tcc_add_symbol(s, "RPhys_drawBodiesPro", RPhys_drawBodiesPro);
 }
 
 typedef struct c_file {
@@ -262,7 +299,6 @@ c_file compile_file(char* fileName, RSGL_window* win) {
     fclose(file);
     file_ptr[len] = '\0';
 
-    tcc_add_include_path(tccState, "./include");
     tcc_add_include_path(tccState, "./");
 
     if (tcc_compile_string(tccState, file_ptr) == -1) {
