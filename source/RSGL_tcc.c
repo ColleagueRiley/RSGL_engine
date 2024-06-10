@@ -7,11 +7,21 @@
 
 TCCState* tccState = NULL;
 
+typedef struct c_file {
+    char* fileName;
+    void (*mainFunc)();
+    void (*eventFunc)(RGFW_Event);
+    void (*collideFunc)(RPhys_body*, RPhys_body*);
+    struct stat lastFileStat;
+    bool inited;
+} c_file;
+
+c_file files[200];
+size_t files_len = 0;
+
 void error_func(void * user, const char * msg) {
     printf("TCC Error: %s\n", msg);
 }
-
-void* eventFunc = NULL;
 
 void add_RSGL_symbols(TCCState* s) {
     tcc_add_symbol(s, "RSGL_legacy", RSGL_legacy);
@@ -243,16 +253,13 @@ void add_RSGL_symbols(TCCState* s) {
     tcc_add_symbol(s, "RPhys_drawBodiesPro", RPhys_drawBodiesPro);
 }
 
-typedef struct c_file {
-    char* fileName;
-    void (*mainFunc)();
-    void (*eventFunc)(RGFW_Event);
-    struct stat lastFileStat;
-    bool inited;
-} c_file;
-
-c_file files[200];
-size_t files_len = 0;
+void RPhys_collideCallback(RPhys_body* body1, RPhys_body* body2) {
+    u32 i;
+    for (i = 0; i < files_len; i++) {
+        if (files[i].collideFunc != NULL)
+            files[i].collideFunc(body1, body2);
+    }
+}
 
 c_file compile_file(char* fileName, RSGL_window* win) {
     u32 i;
@@ -265,6 +272,7 @@ c_file compile_file(char* fileName, RSGL_window* win) {
         files[i].fileName = fileName;
         files[i].mainFunc = NULL;
         files[i].eventFunc = NULL;
+        files[i].collideFunc = NULL;
         files[i].inited = false;
         files_len++;
     }
@@ -306,6 +314,7 @@ c_file compile_file(char* fileName, RSGL_window* win) {
     if (tcc_compile_string(tccState, file_ptr) == -1) {
         files[i].mainFunc = NULL;
         files[i].eventFunc = NULL;
+        files[i].collideFunc = NULL;
         
         return files[i];
     }
@@ -321,7 +330,7 @@ c_file compile_file(char* fileName, RSGL_window* win) {
         ((void (*)()) initFunc)(win);
 
     files[i].eventFunc = tcc_get_symbol(tccState, "eventLoop");
-
+    files[i].collideFunc = tcc_get_symbol(tccState, "collideEvent");
     files[i].mainFunc = tcc_get_symbol(tccState, "main");
 
     files[i].lastFileStat = fileStat;

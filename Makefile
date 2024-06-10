@@ -42,7 +42,7 @@ tinycc/libtcc.a:
 	make tinycc
 	cd tinycc && ./configure && make
 
-RSGL_engine: source/* include/*
+RSGL_engine: source/* includ	e/*
 	make tinycc/libtcc.a
 	$(CC) source/main.c $(LIBS) -	I./include -I./tinycc tinycc/libtcc.a -o $@
 

@@ -18,7 +18,8 @@ int main(int argc, char ** argv) {
     }
 
     bool rElEaSeMoDe = false; /* in rElEaSe MoDe */
-
+    bool phys_pause = false;
+  
     RPhys_init();
 
     RSGL_window* win = RSGL_createWindow("name", (RSGL_rect){0, 0, 1000, 800}, RSGL_CENTER);    
@@ -27,7 +28,7 @@ int main(int argc, char ** argv) {
 
     sprite* sprites = (sprite*)RPHYS_MALLOC(sizeof(sprite) * RPHYS_BODIES_INIT);
     
-
+     
     while (RGFW_window_shouldClose(win) == false) {
         while (RSGL_window_checkEvent(win)) {
             if (win->event.type == RGFW_quit)
@@ -39,39 +40,56 @@ int main(int argc, char ** argv) {
                     files[i].eventFunc(win->event);
             }
 
-    
-            if (win->event.type == RGFW_mouseButtonPressed && (RSGL_isPressedI(win, RGFW_ControlL) && !rElEaSeMoDe)) {
-                u32 index = 0;
-                for (index = 0; index < RPhys_len; index++) {
-                    RPhys_body* body = RPhys_bodies[index];
-                    sprite* sprite = &sprites[index]; 
+            switch (win->event.type) {
+                case RGFW_keyReleased:
+                    if (win->event.keyCode == RGFW_d && RSGL_isPressedI(win, RGFW_ControlL))
+                        phys_pause = !phys_pause;
+                    break;
+                
+                case RGFW_mouseButtonPressed:  
+                    if (RSGL_isPressedI(win, RGFW_ControlL) && !rElEaSeMoDe) {
+                        u32 index = 0;
+                        for (index = 0; index < RPhys_len; index++) {
+                            RPhys_body* body = RPhys_bodies[index];
+                            sprite* sprite = &sprites[index]; 
 
-                    sprite->pressed = RSGL_rectCollidePointF(RPhys_shape_getRect(body->shape), RSGL_POINTF(win->event.point.x, win->event.point.y));
-                    sprite->initPoint = win->event.point;
+                            sprite->pressed = RSGL_rectCollidePointF(RPhys_shape_getRect(body->shape), RSGL_POINTF(win->event.point.x, win->event.point.y));
+                            sprite->initPoint = win->event.point;
+                        }
+                    } 
+
+                    break;
+                
+                case RGFW_mousePosChanged: {
+                    u32 index = 0;
+                    for (index = 0; index < RPhys_len; index++) {
+                        RPhys_body* body = RPhys_bodies[index];
+                        sprite* sprite = &sprites[index]; 
+
+                        if (sprite->pressed == false) 
+                            continue;
+                        
+                        body->shape.r.v = RSGL_POINTF(body->shape.r.v.x + (float)(win->event.point.x - sprite->initPoint.x),
+                                                            body->shape.r.v.y + (float)(win->event.point.y - sprite->initPoint.y));
+
+                        sprite->initPoint = win->event.point;   
+                    }
+
+                    break;
                 }
-            } else if (win->event.type == RGFW_mousePosChanged) {
-                u32 index = 0;
-                for (index = 0; index < RPhys_len; index++) {
-                    RPhys_body* body = RPhys_bodies[index];
-                    sprite* sprite = &sprites[index]; 
 
-                    if (sprite->pressed == false) 
-                        continue;
+                case RGFW_mouseButtonReleased: {
+                    u32 index = 0;
+                    for (index = 0; index < RPhys_len; index++) {
+                        RPhys_body* body = RPhys_bodies[index];
+                        sprite* sprite = &sprites[index]; 
+
+                        sprite->pressed = false;
+                    }
                     
-                    body->shape.r.v = RSGL_POINTF(body->shape.r.v.x + (float)(win->event.point.x - sprite->initPoint.x),
-                                                        body->shape.r.v.y + (float)(win->event.point.y - sprite->initPoint.y));
-
-                    sprite->initPoint = win->event.point;   
+                    break;
                 }
-            } else if (win->event.type == RGFW_mouseButtonReleased) {
-                u32 index = 0;
-                for (index = 0; index < RPhys_len; index++) {
-                    RPhys_body* body = RPhys_bodies[index];
-                    sprite* sprite = &sprites[index]; 
-
-                    sprite->pressed = false;
-                }
-            } 
+            }
         }
 
         if (win->event.type == RSGL_quit)
@@ -82,7 +100,7 @@ int main(int argc, char ** argv) {
             if (argv[i][0] == '-') {
                 if (rElEaSeMoDe == false && strcmp(argv[i], "--release") == 0)
                     rElEaSeMoDe = true;
-                continue;;
+                continue;
             }
 
             c_file file = compile_file(argv[i], win);
@@ -98,7 +116,9 @@ int main(int argc, char ** argv) {
             RSGL_drawText(str, RSGL_CIRCLE(20 + win->event.point.x, win->event.point.y, 20), RSGL_RGB(0, 0, 0));
         }
 
-        RPhys_run(NULL);
+        if (phys_pause == false)
+            RPhys_run(RPhys_collideCallback);
+        
         RSGL_window_clear(win, RSGL_RGB(255, 255, 255));
     }
     
