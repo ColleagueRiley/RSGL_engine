@@ -75,16 +75,19 @@ jobs:
       run: |
         copy /Y .\RSGL_engine.exe .\build\${{ env.RELEASE_NAME }}\bin
         xcopy .\release .\build\${{ env.RELEASE_NAME }}\release /E /I /Y
-        cd build
+        cd build/bin
         7z a ./${{ env.RELEASE_NAME }}.zip ./${{ env.RELEASE_NAME }}
+        cd ..
+        rm -r bin 
+        7z a ./${{ env.RELEASE_NAME }}-example.zip ./${{ env.RELEASE_NAME }}
         dir
       shell: cmd
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.RELEASE_NAME }}.zip
-        path: ./build/${{ env.RELEASE_NAME }}.zip
+        name: ${{ env.RELEASE_NAME }}.zip ${{ env.RELEASE_NAME }}-example.zip
+        path: ./build/${{ env.RELEASE_NAME }}.zip ./build/${{ env.RELEASE_NAME }}-example.zip
         
     - name: Upload Artifact to Release
       uses: softprops/action-gh-release@v1
