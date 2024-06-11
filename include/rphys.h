@@ -318,11 +318,12 @@ void RPhys_step(double deltaTime, void (*__bodyCollideCallback)(RPhys_body*, RPh
             case RPHYS_RECT: case RPHYS_RECT_POLYGON:
                 body->shape.r.v = RPhys_addVector2(body->shape.c.v, body->velocity);
                 break;
-            case RPHYS_POLYGON:
+            case RPHYS_POLYGON: {
                 size_t v;
                 for (v = 0; v < body->shape.vertexCount; v++)
                     body->shape.vertices[v] = RPhys_addVector2(body->shape.vertices[v], body->velocity);
                 break;
+            }
             case RPHYS_CIRCLE:
                 body->shape.c.v = RPhys_addVector2(body->shape.c.v, body->velocity);
                 break;

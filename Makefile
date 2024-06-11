@@ -1,12 +1,9 @@
 CC = gcc
 
-LIBS :=-lgdi32 -lm -lopengl32 -lwinmm -ggdb -lm
+STATIC = --static
+LIBS := $(STATIC) -lgdi32 -lm -lopengl32 -lwinmm -ggdb -lm
 EXT = .exe
-STATIC =
-
-ifeq ($(CC),x86_64-w64-mingw32-gcc)
-	STATIC = --static
-endif
+EXT_TCC = .dll
 
 ifneq (,$(filter $(CC),winegcc x86_64-w64-mingw32-gcc))
     detected_OS := Windows
@@ -23,32 +20,35 @@ else
 endif
 
 ifeq ($(detected_OS),Windows)
-	LIBS := -ggdb -lshell32 -lwinmm -lgdi32 -lopengl32 $(STATIC)
+	LIBS := $(STATIC) -ggdb -lshell32 -lwinmm -lgdi32 -lopengl32 
 	EXT = .exe
+	EXT_TCC = .dll
 endif
 ifeq ($(detected_OS),Darwin)        # Mac OS X
-	LIBS := -lm -framework Foundation -framework AppKit -framework OpenGL -framework CoreVideo$(STATIC)
+	LIBS := -lm -framework Foundation -framework AppKit -framework OpenGL -framework CoreVideo
 	EXT = 
+	EXT_TCC = .a
 endif
 ifeq ($(detected_OS),Linux)
-    LIBS := -lXrandr -lX11 -lm -lGL -ldl -lpthread $(STATIC)
+    LIBS := -lXrandr -lX11 -lm -lGL -ldl -lpthread
 	EXT =
+	EXT_TCC = .a
 endif
 
 tinycc:
 	git clone https://repo.or.cz/tinycc.git
 
-tinycc/libtcc.a:
+tinycc/libtcc$(EXT_TCC):
 	make tinycc
 	cd tinycc && ./configure && make
 
-RSGL_engine: source/* includ	e/*
-	make tinycc/libtcc.a
-	$(CC) source/main.c $(LIBS) -	I./include -I./tinycc tinycc/libtcc.a -o $@
+RSGL_engine: source/* include/*
+	make tinycc/libtcc$(EXT_TCC)
+	$(CC) source/main.c $(LIBS) -I./include -I./tinycc tinycc/libtcc$(EXT_TCC) -o $@
 
 debug:
-	make tinycc/libtcc.a
-	$(CC) source/main.c $(LIBS) -I./include -I./tinycc tinycc/libtcc.a -o RSGL_engine
+	make tinycc/libtcc$(EXT_TCC)
+	$(CC) source/main.c $(LIBS) -I./include -I./tinycc tinycc/libtcc$(EXT_TCC) -o RSGL_engine
 	./RSGL_engine test.c
 
 release_example:
