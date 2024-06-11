@@ -17,5 +17,3 @@ more features will probably be added in the future
 # features todo
     - save new cords when sprite is moved (optionally)
     - auto create RSGL.h (combined defs of the RGFW, rphys and RSGL.h )
-    - github auto compile / release compiled RSGL_engine program
-    - github auto compile / release compiled/packaged example 
