@@ -89,7 +89,7 @@ jobs:
     - name: Upload Artifact to Release
       uses: softprops/action-gh-release@v1
       with:
-        files: ./build/${{ env.RELEASE_NAME }}.zip
+        files: ./build/${{ env.RELEASE_NAME }}.zip ${{ env.RELEASE_NAME }}-example.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       if: github.event_name == 'release' && github.event.action == 'published'
