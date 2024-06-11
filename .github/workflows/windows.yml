@@ -75,11 +75,8 @@ jobs:
       run: |
         copy /Y .\RSGL_engine.exe .\build\${{ env.RELEASE_NAME }}\bin
         xcopy .\release .\build\${{ env.RELEASE_NAME }}\release /E /I /Y
-        cd build/bin
-        7z a ./${{ env.RELEASE_NAME }}.zip ./${{ env.RELEASE_NAME }}
-        cd ..
-        rm -r bin 
-        7z a ./${{ env.RELEASE_NAME }}-example.zip ./${{ env.RELEASE_NAME }}
+        7z a ./${{ env.RELEASE_NAME }}.zip ./${{ env.RELEASE_NAME }}/bin
+        7z a ./${{ env.RELEASE_NAME }}-example.zip ./${{ env.RELEASE_NAME }}/release
         dir
       shell: cmd
 

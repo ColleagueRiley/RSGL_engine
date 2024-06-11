@@ -62,10 +62,8 @@ jobs:
       run: |
         cp -v ./RSGL_engine ./build/${{ env.RELEASE_NAME }}/bin/
         cp -v -r ./release ./build/${{ env.RELEASE_NAME }}/
-        tar -czvf ${{ env.RELEASE_NAME }}.tar.gz ${{ env.RELEASE_NAME }}
-        rm -r bin
-        cd ..
-        tar -czvf ${{ env.RELEASE_NAME }}-example.tar.gz ${{ env.RELEASE_NAME }}
+        tar -czvf ${{ env.RELEASE_NAME }}.tar.gz ${{ env.RELEASE_NAME }}/bin
+        tar -czvf ${{ env.RELEASE_NAME }}-example.tar.gz ${{ env.RELEASE_NAME }}/release
         
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
