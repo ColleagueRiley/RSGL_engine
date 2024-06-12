@@ -1,7 +1,6 @@
 CC = gcc
 
-STATIC = -static
-LIBS := $(STATIC) -lgdi32 -lm -lopengl32 -lwinmm -ggdb -lm
+LIBS := -static -no-pthread -lgdi32 -lm -lopengl32 -lwinmm -ggdb -lm
 EXT = .exe
 EXT_TCC = .dll
 
@@ -20,7 +19,7 @@ else
 endif
 
 ifeq ($(detected_OS),Windows)
-	LIBS := $(STATIC) -ggdb -lshell32 -lwinmm -lgdi32 -lopengl32 
+	LIBS := -static -no-pthread -ggdb -lshell32 -lwinmm -lgdi32 -lopengl32 
 	EXT = .exe
 	EXT_TCC = .dll
 endif
