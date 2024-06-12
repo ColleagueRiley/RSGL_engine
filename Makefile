@@ -1,6 +1,6 @@
 CC = gcc
 
-STATIC = --static
+STATIC = -static
 LIBS := $(STATIC) -lgdi32 -lm -lopengl32 -lwinmm -ggdb -lm
 EXT = .exe
 EXT_TCC = .dll
