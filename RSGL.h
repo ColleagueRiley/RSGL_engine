@@ -1,3 +1,356 @@
+/*
+* Copyright (c) 2021-23 ColleagueRiley ColleagueRiley@gmail.com
+*
+* This software is provided 'as-is', without any express or implied
+* warranty.  In no event will the authors be held liable for any damages
+* arising from the use of this software.
+*
+* Permission is granted to anyone to use this software for any purpose,
+* including commercial applications, and to alter it and redistribute it
+* freely, subject to the following r estrictions:
+*
+* 1. The origin of this software must not be misrepresented; you must not
+* claim that you wrote the original software. If you use this software
+* in a product, an acknowledgment in the product documentation would be
+* appreciated but is not required.
+* 2. Altered source versions must be plainly marked as such, and must not be
+* misrepresented as being the original software.
+* 3. This notice may not be removed or altered from any source distribution.
+*
+*
+*/
+
+/*
+    define args
+    (MAKE SURE RSGL_IMPLEMENTATION is in exactly one header or you use -DRSGL_IMPLEMENTATION)
+	#define RSGL_IMPLEMENTATION - makes it so source code is included with header
+    
+    #define RSGL_NO_RGFW - no RSGL_window, RSGL_graphics is used instead [this is for using a differnt window manager other than RGFW ]
+    #define RSGL_NO_TEXT - do not include text rendering functions
+    #define RSGL_NO_WIDGETS - do not include widgets
+    #define RSGL_NO_SAVE_IMAGE - do not save/load images (don't use RSGL_drawImage if you use this), 
+                                    RSGL_drawImage saves the file name + texture so it can load it
+                                    when you ask for it later. This disables that 
+    #define RSGL_INIT_FONTS [number of fonts] - set hFow much room should be pre-allocated for fonts by fontstash
+                                                this avoids performance issues related to RSGL_REALLOC
+                                                RSGL_INIT_FONTS = 4 by default
+    #define RSGL_INIT_IMAGES [number of fonts] - set how much room should be pre-allocated for images by RSGL
+                                                this avoids performance issues related to RSGL_REALLOC
+                                                RSGL_INIT_IMAGES = 20 by default
+    #define RSGL_NEW_IMAGES [number of fonts] - set how much room should be RSGL_REALLOCated at a time for images by RSGL
+                                                this avoids performance issues related to RSGL_REALLOC
+                                                RSGL_NEW_IMAGES 10 by default
+
+    #define RSGL_MAX_BATCHES [number of batches] - set max number of batches to be allocated
+    #define RSGL_MAX_VERTS [number of verts] - set max number of verts to be allocated (global, not per batch)
+
+    #define RSGL_RENDER_LEGACY - use legacy rendering (ex. opengl) functions
+    
+    #define RSGL_NO_STB_IMAGE - do not include stb_image.h (& don't define image loading funcs)
+    #define RSGL_NO_STB_IMAGE_IMP - declare stb funcs but don't define
+    #define RSGL_NO_DEPS_FOLDER - Do not use '/deps' for the deps includes, use "./"
+
+    RGFW (more RGFW documentation in RGFW.h):
+    
+	#define RGFW_PRINT_ERRORS - (optional) makes it so RGFW prints errors when they're found
+	#define RGFW_OSMESA - (optional) use OSmesa as backend (instead of system's opengl api + regular opengl)
+	#define RGFW_BUFFER - (optional) just draw directly to (RGFW) window pixel buffer that is drawn to screen (the buffer is in the BGRA format)
+	#define RGFW_EGL - (optional) use EGL for loading an OpenGL context (instead of the system's opengl api)
+	#define RGFW_OPENGL_ES - (optional) use EGL to load and use Opengl ES for backend rendering (instead of the system's opengl api)
+	#define VULKAN - (optional) use vulkan for the rendering backend (rather than opengl)
+
+	#define RGFW_LINK_EGL (optional) (windows only) if EGL is being used, if EGL functions should be defined dymanically (using GetProcAddress)
+	#define RGFW_LINK_OSMESA (optional) (windows only) if EGL is being used, if OS Mesa functions should be defined dymanically  (using GetProcAddress)
+
+	#define RGFW_X11 (optional) (unix only) if X11 should be used. This option is turned on by default by unix systems except for MacOS
+	#define RGFW_WGL_LOAD (optional) (windows only) if WGL should be loaded dynamically during runtime
+*/ 
+#ifndef RSGL_INIT_FONTS
+#define RSGL_INIT_FONTS 4
+#endif
+#ifndef RSGL_NEW_FONTS
+#define RSGL_NEW_FONTS 2
+#endif
+#ifndef RSGL_INIT_IMAGES
+#define RSGL_INIT_IMAGES 20
+#endif
+#ifndef RSGL_NEW_IMAGES
+#define RSGL_NEW_IMAGES 10
+#endif
+#ifndef RSGL_MAX_BATCHES
+#define RSGL_MAX_BATCHES 2028
+#endif
+#ifndef RSGL_MAX_VERTS
+#define RSGL_MAX_VERTS 8192
+#endif
+
+#ifndef RSGL_MALLOC
+#define RSGL_MALLOC malloc
+#define RSGL_REALLOC realloc
+#define RSGL_FREE free
+#endif
+
+#ifndef RSGL_UNUSED
+#define RSGL_UNUSED(x) if (x){}
+#endif
+
+/*! Optional arguments for making a windows */
+#define RSGL_TRANSPARENT_WINDOW		(1L<<9) /*!< the window is transparent */
+#define RSGL_NO_BORDER		(1L<<3) /*!< the window doesn't have border */
+#define RSGL_NO_RESIZE		(1L<<4) /*!< the window cannot be resized  by the user */
+#define RSGL_ALLOW_DND     (1L<<5) /*!< the window supports drag and drop*/
+#define RSGL_HIDE_MOUSE (1L<<6) /*! the window should hide the mouse or not (can be toggled later on) using `RGFW_window_mouseShow*/
+#define RSGL_FULLSCREEN (1L<<8) /* the window is fullscreen by default or not */
+#define RSGL_CENTER (1L<<10) /*! center the window on the screen */
+#define RSGL_OPENGL_SOFTWARE (1L<<11) /*! use OpenGL software rendering */
+
+/*! event codes */
+#define RSGL_keyPressed 2 /* a key has been pressed */
+#define RSGL_keyReleased 3 /*!< a key has been released*/
+/*! key event note
+	the code of the key pressed is stored in
+	RGFW_Event.keyCode
+	!!Keycodes defined at the bottom of the header file!!
+	
+	while a string version is stored in
+	RGFW_Event.KeyString
+
+	RGFW_Event.lockState holds the current lockState
+	this means if CapsLock, NumLock are active or not
+*/
+#define RSGL_mouseButtonPressed 4 /*!< a mouse button has been pressed (left,middle,right)*/
+#define RSGL_mouseButtonReleased 5 /*!< a mouse button has been released (left,middle,right)*/
+#define RSGL_mousePosChanged 6 /*!< the position of the mouse has been changed*/
+/*! mouse event note
+	The x and y coords of the mouse are stored as RSGL_point in RGFW_Event.point
+	
+	RGFW_Event.button holds which mouse button was pressed
+*/
+#define RSGL_jsButtonPressed 7 /*!< a joystick button was pressed */
+#define RSGL_jsButtonReleased 8 /*!< a joystick button was released */
+#define RSGL_jsAxisMove 9 /*!< an axis of a joystick was moved*/
+/*! joystick event note
+	RGFW_Event.joystick holds which joystick was altered, if any
+	RGFW_Event.button holds which joystick button was pressed
+
+	RGFW_Event.axis holds the data of all the axis
+	RGFW_Event.axisCount says how many axis there are
+*/
+#define RSGL_windowAttribsChange 10 /*!< the window was moved or resized (by the user) */
+/* attribs change event note
+	The event data is sent straight to the window structure
+	with win->r.x, win->r.y, win->r.w and win->r.h
+*/
+#define RSGL_quit 33 /*!< the user clicked the quit button*/ 
+#define RSGL_dnd 34 /*!< a file has been dropped into the window*/
+#define RSGL_dnd_init 35 /*!< the start of a dnd event, when the place where the file drop is known */
+/* dnd data note
+	The x and y coords of the drop are stored as RSGL_point in RGFW_Event.point
+
+	RGFW_Event.droppedFilesCount holds how many files were dropped
+	
+	This is also the size of the array which stores all the dropped file string,
+	RGFW_Event.droppedFiles
+*/
+
+/*! mouse button codes (RGFW_Event.button) */
+#define RSGL_mouseLeft  1 /*!< left mouse button is pressed*/
+#define RSGL_mouseMiddle  2 /*!< mouse-wheel-button is pressed*/
+#define RSGL_mouseRight  3 /*!< right mouse button is pressed*/
+#define RSGL_mouseScrollUp  4 /*!< mouse wheel is scrolling up*/
+#define RSGL_mouseScrollDown  5 /*!< mouse wheel is scrolling down*/
+
+/* for RGFW_Event.lockstate */
+#define RSGL_CAPSLOCK (1L << 1)
+#define RSGL_NUMLOCK (1L << 2)
+
+#define RSGL_JS_A RGFW_JS_A /* or PS X button */
+#define RSGL_JS_B RGFW_JS_B /* or PS circle button */
+#define RSGL_JS_Y RGFW_JS_Y /* or PS triangle button */
+#define RSGL_JS_X RGFW_JS_X /* or PS square button */
+#define RSGL_JS_START RGFW_JS_START /* start button */
+#define RSGL_JS_SELECT RGFW_JS_SELECT /* select button */
+#define RSGL_JS_HOME RGFW_JS_HOME /* home button */
+#define RSGL_JS_UP RGFW_JS_UP /* dpad up */
+#define RSGL_JS_DOWN RGFW_JS_DOWN /* dpad down*/
+#define RSGL_JS_LEFT RGFW_JS_LEFT /* dpad left */
+#define RSGL_JS_RIGHT RGFW_JS_RIGHT /* dpad right */
+#define RSGL_JS_L1 RGFW_JS_L1 /* left bump */
+#define RSGL_JS_L2 RGFW_JS_L2 /* left trigger*/
+#define RSGL_JS_R1 RGFW_JS_R1 /* right bumper */
+#define RSGL_JS_R2 RGFW_JS_R2 /* right trigger */
+
+/* 
+RSGL basicDraw types
+*/
+
+#ifndef RSGL_QUADS
+#define RSGL_POINTS                               0x0000
+#define RSGL_LINES                                0x0001      
+#define RSGL_LINE_LOOP                            0x0002
+#define RSGL_LINE_STRIP                           0x0003
+#define RSGL_TRIANGLES                            0x0004      
+#define RSGL_TRIANGLE_STRIP                       0x0005
+#define RSGL_TRIANGLE_FAN                         0x0006      
+#define RSGL_QUADS                                 0x0007
+
+/* these are to ensure GL_DEPTH_TEST is disabled when they're being rendered */
+#define RSGL_POINTS_2D                               0x0010
+#define RSGL_LINES_2D                                0x0011    
+#define RSGL_LINE_LOOP_2D                            0x0012
+#define RSGL_LINE_STRIP_2D                           0x0013
+#define RSGL_TRIANGLES_2D                            0x0014     
+#define RSGL_TRIANGLE_STRIP_2D                       0x0015
+#define RSGL_TRIANGLE_FAN_2D                         0x0016
+
+#define RSGL_TRIANGLES_2D_BLEND     0x0114
+#endif
+
+/* 
+keys = 
+RGFW_{key} 
+
+keys will not be reincluded into RSGL
+*/
+
+#ifndef RSGL_H
+#define RSGL_H
+
+#ifndef RSGLDEF
+#ifdef __APPLE__
+#define RSGLDEF extern inline
+#else
+#define RSGLDEF inline
+#endif
+#endif
+
+#define RGFWDEF RSGLDEF
+
+#if !defined(u8)
+    #include <stdint.h>
+
+    typedef uint8_t     u8;
+	typedef int8_t      i8;
+	typedef uint16_t   u16;
+	typedef int16_t    i16;
+	typedef uint32_t   u32;
+	typedef int32_t    i32;
+	typedef uint64_t   u64;
+	typedef int64_t    i64;
+#endif
+
+#define RSGL_between(x, lower, upper) (((lower) <= (x)) && ((x) <= (upper)))
+#define RSGL_ENUM(type, name) type name; enum
+
+/* 
+*******
+RSGL_[shape]
+*******
+*/
+
+typedef struct RSGL_rect {
+    i32 x, y, w, h;
+} RSGL_rect;
+#define RSGL_RECT(x, y, w, h) (RSGL_rect){x, y, w, h}
+
+typedef struct RSGL_rectF { float x, y, w, h; } RSGL_rectF;
+#define RSGL_RECTF(x, y, w, h) (RSGL_rectF){x, y, w, h}
+
+typedef struct RSGL_point {
+    i32 x, y;
+} RSGL_point;
+#define RSGL_POINT(x, y) (RSGL_point){x, y}
+
+typedef struct RSGL_area {
+    u32 w, h;
+} RSGL_area;
+#define RSGL_AREA(w, h) (RSGL_area){w, h}
+
+/*  include RGFW here  */
+
+#ifndef RSGL_NO_RGFW
+/* so we're only using one kind of shape data */
+#define RGFW_rect RSGL_rect
+#define RGFW_vector RSGL_point
+#define RGFW_area RSGL_area
+#define GL_SILENCE_DEPRECATION
+#ifndef RSGL_NO_DEPS_FOLDER
+/*
+* Copyright (C) 2023-24 ColleagueRiley
+*
+* libpng license
+*
+* This software is provided 'as-is', without any express or implied
+* warranty.  In no event will the authors be held liable for any damages
+* arising from the use of this software.
+*
+* Permission is granted to anyone to use this software for any purpose,
+* including commercial applications, and to alter it and redistribute it
+* freely, subject to the following restrictions:
+*
+* 1. The origin of this software must not be misrepresented; you must not
+*    claim that you wrote the original software. If you use this software
+*    in a product, an acknowledgment in the product documentation would be
+*    appreciated but is not required.
+* 2. Altered source versions must be plainly marked as such, and must not be
+*    misrepresented as being the original software.
+* 3. This notice may not be removed or altered from any source distribution.
+*
+*
+*/
+
+/*
+	(MAKE SURE RGFW_IMPLEMENTATION is in exactly one header or you use -D RGFW_IMPLEMENTATION)
+	#define RGFW_IMPLEMENTATION - makes it so source code is included with header
+*/
+
+/*
+	#define RGFW_IMPLEMENTATION - (required) makes it so the source code is included
+	#define RGFW_PRINT_ERRORS - (optional) makes it so RGFW prints errors when they're found
+	#define RGFW_OSMESA - (optional) use OSmesa as backend (instead of system's opengl api + regular opengl)
+	#define RGFW_BUFFER - (optional) just draw directly to (RGFW) window pixel buffer that is drawn to screen (the buffer is in the RGBA format)
+	#define RGFW_EGL - (optional) use EGL for loading an OpenGL context (instead of the system's opengl api)
+	#define RGFW_OPENGL_ES1 - (optional) use EGL to load and use Opengl ES (version 1) for backend rendering (instead of the system's opengl api)
+									This version doesn't work for desktops (I'm pretty sure)
+	#define RGFW_OPENGL_ES2 - (optional) use OpenGL ES (version 2)
+	#define RGFW_OPENGL_ES3 - (optional) use OpenGL ES (version 3)
+	#define RGFW_VULKAN - (optional) use vulkan for the rendering backend (rather than opengl)
+	#define RGFW_DIRECTX - (optional) use directX for the rendering backend (rather than opengl) (windows only, defaults to opengl for unix)
+	#define RGFW_NO_API - (optional) don't use any rendering API (no opengl, no vulkan, no directX)
+
+	#define RGFW_LINK_EGL (optional) (windows only) if EGL is being used, if EGL functions should be defined dymanically (using GetProcAddress)
+	#define RGFW_LINK_OSMESA (optional) (windows only) if EGL is being used, if OS Mesa functions should be defined dymanically  (using GetProcAddress)
+
+	#define RGFW_X11 (optional) (unix only) if X11 should be used. This option is turned on by default by unix systems except for MacOS
+	#define RGFW_WGL_LOAD (optional) (windows only) if WGL should be loaded dynamically during runtime
+	#define RGFW_NO_X11_CURSOR (optional) (unix only) don't use XCursor
+	#define RGFW_NO_X11_CURSOR_PRELOAD (optional) (unix only) Use XCursor, but don't link it in code, (you'll have to link it with -lXcursor)
+
+	#define RGFW_NO_DPI - Do not include calculate DPI (no XRM nor libShcore included)
+
+	#define RGFW_ALLOC_DROPFILES (optional) if room should be allocating for drop files (by default it's global data)
+	#define RGFW_MALLOC x - choose what function to use to allocate, by default the standard malloc is used
+	#define RGFW_CALLOC x - choose what function to use to allocate (calloc), by default the standard calloc is used
+	#define RGFW_FREE x - choose what function to use to allocated memory, by default the standard free is used
+*/
+
+/*
+	Credits :
+		EimaMei/Sacode : Much of the code for creating windows using winapi, Wrote the Silicon library, helped with MacOS Support
+
+		stb - This project is heavily inspired by the stb single header files
+
+		GLFW:
+			certain parts of winapi and X11 are very poorly documented,
+			GLFW's source code was referenced and used throughout the project (used code is marked in some way),
+			this mainly includes, code for drag and drops, code for setting the icon to a bitmap and the code for managing the clipboard for X11 (as these parts are not documented very well)
+
+			GLFW Copyright, https::/github.com/GLFW/GLFW
+
+			Copyright (c) 2002-2006 Marcus Geelnard
+			Copyright (c) 2006-2019 Camilla Löwy
+*/
+
 #ifndef RGFW_MALLOC
 #include <stdlib.h>
 #include <time.h>
@@ -47,36 +400,6 @@ extern "C" {
 	typedef uint64_t   u64;
 	typedef int64_t    i64;
 #endif
-
-typedef struct RSGL_area {
-    u32 w, h;
-} RSGL_area;
-
-
-/* 
-*******
-RSGL_[shape]
-*******
-*/
-
-typedef struct RSGL_rect {
-    i32 x, y, w, h;
-} RSGL_rect;
-#define RSGL_RECT(x, y, w, h) (RSGL_rect){x, y, w, h}
-
-typedef struct RSGL_rectF { float x, y, w, h; } RSGL_rectF;
-#define RSGL_RECTF(x, y, w, h) (RSGL_rectF){x, y, w, h}
-
-typedef struct RSGL_point {
-    i32 x, y;
-} RSGL_point;
-#define RSGL_POINT(x, y) (RSGL_point){x, y}
-
-#define RSGL_AREA(w, h) (RSGL_area){w, h}
-#define RGFW_rect RSGL_rect
-#define RGFW_vector RSGL_point
-#define RGFW_area RSGL_area
-#define GL_SILENCE_DEPRECATION
 
 #if defined(RGFW_X11) && defined(__APPLE__)
 #define RGFW_MACOS_X11
@@ -758,194 +1081,231 @@ typedef struct { i32 x, y; } RGFW_vector;
 	RGFWDEF u64 RGFW_getTime(void); /* get time in seconds */
 	RGFWDEF u64 RGFW_getTimeNS(void); /* get time in nanoseconds */
 	RGFWDEF void RGFW_sleep(u64 microsecond); /* sleep for a set time */
-    
-#ifndef RSGL_INIT_FONTS
-#define RSGL_INIT_FONTS 4
+#endif /* RGFW_HEADER */
+
+	/*
+	Example to get you started :
+
+	linux : gcc main.c -lX11 -lXcursor -lGL
+	windows : gcc main.c -lopengl32 -lshell32 -lgdi32
+	macos : gcc main.c -framework Foundation -framework AppKit -framework OpenGL -framework CoreVideo
+
+	#define RGFW_IMPLEMENTATION
+	#include "RGFW.h"
+
+	u8 icon[4 * 3 * 3] = {0xFF, 0x00, 0x00, 0xFF,    0xFF, 0x00, 0x00, 0xFF,     0xFF, 0x00, 0x00, 0xFF,   0xFF, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0x00, 0xFF,     0xFF, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0xFF};
+
+	int main() {
+		RGFW_window* win = RGFW_createWindow("name", RGFW_RECT(500, 500, 500, 500), (u64)0);
+
+		RGFW_window_setIcon(win, icon, RGFW_AREA(3, 3), 4);
+
+		for (;;) {
+			RGFW_window_checkEvent(win); // NOTE: checking events outside of a while loop may cause input lag
+			if (win->event.type == RGFW_quit || RGFW_isPressedI(win, RGFW_Escape))
+				break;
+
+			RGFW_window_swapBuffers(win);
+
+			glClearColor(0xFF, 0XFF, 0xFF, 0xFF);
+			glClear(GL_COLOR_BUFFER_BIT);
+		}
+
+		RGFW_window_close(win);
+	}
+
+		compiling :
+
+		if you wish to compile the library all you have to do is create a new file with this in it
+
+		rgfw.c
+		#define RGFW_IMPLEMENTATION
+		#include "RGFW.h"
+
+		then you can use gcc (or whatever compile you wish to use) to compile the library into object file
+
+		ex. gcc -c RGFW.c -fPIC
+
+		after you compile the library into an object file, you can also turn the object file into an static or shared library
+
+		(commands ar and gcc can be replaced with whatever equivalent your system uses)
+		static : ar rcs RGFW.a RGFW.o
+		shared :
+			windows:
+				gcc -shared RGFW.o -lopengl32 -lshell32 -lgdi32 -o RGFW.dll
+			linux:
+				gcc -shared RGFW.o -lX11 -lXcursor -lGL -o RGFW.so
+			macos:
+				gcc -shared RGFW.o -framework Foundation -framework AppKit -framework OpenGL -framework CoreVideo
+	*/
+
+#ifdef RGFW_X11
+#define RGFW_OS_BASED_VALUE(l, w, m) l
 #endif
-#ifndef RSGL_NEW_FONTS
-#define RSGL_NEW_FONTS 2
+#ifdef RGFW_WINDOWS
+#define RGFW_OS_BASED_VALUE(l, w, m) w
 #endif
-#ifndef RSGL_INIT_IMAGES
-#define RSGL_INIT_IMAGES 20
-#endif
-#ifndef RSGL_NEW_IMAGES
-#define RSGL_NEW_IMAGES 10
-#endif
-#ifndef RSGL_MAX_BATCHES
-#define RSGL_MAX_BATCHES 2028
-#endif
-#ifndef RSGL_MAX_VERTS
-#define RSGL_MAX_VERTS 8192
-#endif
-
-#ifndef RSGL_MALLOC
-#define RSGL_MALLOC malloc
-#define RSGL_REALLOC realloc
-#define RSGL_FREE free
-#endif
-
-#ifndef RSGL_UNUSED
-#define RSGL_UNUSED(x) if (x){}
-#endif
-
-/*! Optional arguments for making a windows */
-#define RSGL_TRANSPARENT_WINDOW		(1L<<9) /*!< the window is transparent */
-#define RSGL_NO_BORDER		(1L<<3) /*!< the window doesn't have border */
-#define RSGL_NO_RESIZE		(1L<<4) /*!< the window cannot be resized  by the user */
-#define RSGL_ALLOW_DND     (1L<<5) /*!< the window supports drag and drop*/
-#define RSGL_HIDE_MOUSE (1L<<6) /*! the window should hide the mouse or not (can be toggled later on) using `RGFW_window_mouseShow*/
-#define RSGL_FULLSCREEN (1L<<8) /* the window is fullscreen by default or not */
-#define RSGL_CENTER (1L<<10) /*! center the window on the screen */
-#define RSGL_OPENGL_SOFTWARE (1L<<11) /*! use OpenGL software rendering */
-
-/*! event codes */
-#define RSGL_keyPressed 2 /* a key has been pressed */
-#define RSGL_keyReleased 3 /*!< a key has been released*/
-/*! key event note
-	the code of the key pressed is stored in
-	RGFW_Event.keyCode
-	!!Keycodes defined at the bottom of the header file!!
-	
-	while a string version is stored in
-	RGFW_Event.KeyString
-
-	RGFW_Event.lockState holds the current lockState
-	this means if CapsLock, NumLock are active or not
-*/
-#define RSGL_mouseButtonPressed 4 /*!< a mouse button has been pressed (left,middle,right)*/
-#define RSGL_mouseButtonReleased 5 /*!< a mouse button has been released (left,middle,right)*/
-#define RSGL_mousePosChanged 6 /*!< the position of the mouse has been changed*/
-/*! mouse event note
-	The x and y coords of the mouse are stored as RSGL_point in RGFW_Event.point
-	
-	RGFW_Event.button holds which mouse button was pressed
-*/
-#define RSGL_jsButtonPressed 7 /*!< a joystick button was pressed */
-#define RSGL_jsButtonReleased 8 /*!< a joystick button was released */
-#define RSGL_jsAxisMove 9 /*!< an axis of a joystick was moved*/
-/*! joystick event note
-	RGFW_Event.joystick holds which joystick was altered, if any
-	RGFW_Event.button holds which joystick button was pressed
-
-	RGFW_Event.axis holds the data of all the axis
-	RGFW_Event.axisCount says how many axis there are
-*/
-#define RSGL_windowAttribsChange 10 /*!< the window was moved or resized (by the user) */
-/* attribs change event note
-	The event data is sent straight to the window structure
-	with win->r.x, win->r.y, win->r.w and win->r.h
-*/
-#define RSGL_quit 33 /*!< the user clicked the quit button*/ 
-#define RSGL_dnd 34 /*!< a file has been dropped into the window*/
-#define RSGL_dnd_init 35 /*!< the start of a dnd event, when the place where the file drop is known */
-/* dnd data note
-	The x and y coords of the drop are stored as RSGL_point in RGFW_Event.point
-
-	RGFW_Event.droppedFilesCount holds how many files were dropped
-	
-	This is also the size of the array which stores all the dropped file string,
-	RGFW_Event.droppedFiles
-*/
-
-/*! mouse button codes (RGFW_Event.button) */
-#define RSGL_mouseLeft  1 /*!< left mouse button is pressed*/
-#define RSGL_mouseMiddle  2 /*!< mouse-wheel-button is pressed*/
-#define RSGL_mouseRight  3 /*!< right mouse button is pressed*/
-#define RSGL_mouseScrollUp  4 /*!< mouse wheel is scrolling up*/
-#define RSGL_mouseScrollDown  5 /*!< mouse wheel is scrolling down*/
-
-/* for RGFW_Event.lockstate */
-#define RSGL_CAPSLOCK (1L << 1)
-#define RSGL_NUMLOCK (1L << 2)
-
-#define RSGL_JS_A RGFW_JS_A /* or PS X button */
-#define RSGL_JS_B RGFW_JS_B /* or PS circle button */
-#define RSGL_JS_Y RGFW_JS_Y /* or PS triangle button */
-#define RSGL_JS_X RGFW_JS_X /* or PS square button */
-#define RSGL_JS_START RGFW_JS_START /* start button */
-#define RSGL_JS_SELECT RGFW_JS_SELECT /* select button */
-#define RSGL_JS_HOME RGFW_JS_HOME /* home button */
-#define RSGL_JS_UP RGFW_JS_UP /* dpad up */
-#define RSGL_JS_DOWN RGFW_JS_DOWN /* dpad down*/
-#define RSGL_JS_LEFT RGFW_JS_LEFT /* dpad left */
-#define RSGL_JS_RIGHT RGFW_JS_RIGHT /* dpad right */
-#define RSGL_JS_L1 RGFW_JS_L1 /* left bump */
-#define RSGL_JS_L2 RGFW_JS_L2 /* left trigger*/
-#define RSGL_JS_R1 RGFW_JS_R1 /* right bumper */
-#define RSGL_JS_R2 RGFW_JS_R2 /* right trigger */
-
-/* 
-RSGL basicDraw types
-*/
-
-#ifndef RSGL_QUADS
-#define RSGL_POINTS                               0x0000
-#define RSGL_LINES                                0x0001      
-#define RSGL_LINE_LOOP                            0x0002
-#define RSGL_LINE_STRIP                           0x0003
-#define RSGL_TRIANGLES                            0x0004      
-#define RSGL_TRIANGLE_STRIP                       0x0005
-#define RSGL_TRIANGLE_FAN                         0x0006      
-#define RSGL_QUADS                                 0x0007
-
-/* these are to ensure GL_DEPTH_TEST is disabled when they're being rendered */
-#define RSGL_POINTS_2D                               0x0010
-#define RSGL_LINES_2D                                0x0011    
-#define RSGL_LINE_LOOP_2D                            0x0012
-#define RSGL_LINE_STRIP_2D                           0x0013
-#define RSGL_TRIANGLES_2D                            0x0014     
-#define RSGL_TRIANGLE_STRIP_2D                       0x0015
-#define RSGL_TRIANGLE_FAN_2D                         0x0016
-
-#define RSGL_TRIANGLES_2D_BLEND     0x0114
+#ifdef RGFW_MACOS
+#define RGFW_OS_BASED_VALUE(l, w, m) m
 #endif
 
-/* 
-keys = 
-RGFW_{key} 
+#define RGFW_Escape RGFW_OS_BASED_VALUE(0xff1b, 0x1B, 53)
+#define RGFW_F1 RGFW_OS_BASED_VALUE(0xffbe, 0x70, 127)
+#define RGFW_F2 RGFW_OS_BASED_VALUE(0xffbf, 0x71, 121)
+#define RGFW_F3 RGFW_OS_BASED_VALUE(0xffc0, 0x72, 100)
+#define RGFW_F4 RGFW_OS_BASED_VALUE(0xffc1, 0x73, 119)
+#define RGFW_F5 RGFW_OS_BASED_VALUE(0xffc2, 0x74, 97)
+#define RGFW_F6 RGFW_OS_BASED_VALUE(0xffc3, 0x75, 98)
+#define RGFW_F7 RGFW_OS_BASED_VALUE(0xffc4, 0x76, 99)
+#define RGFW_F8 RGFW_OS_BASED_VALUE(0xffc5, 0x77, 101)
+#define RGFW_F9 RGFW_OS_BASED_VALUE(0xffc6, 0x78, 102)
+#define RGFW_F10 RGFW_OS_BASED_VALUE(0xffc7, 0x79, 110)
+#define RGFW_F11 RGFW_OS_BASED_VALUE(0xffc8, 0x7A, 104)
+#define RGFW_F12 RGFW_OS_BASED_VALUE(0xffc9, 0x7B, 112)
+#define RGFW_F13 RGFW_OS_BASED_VALUE(0xffca, 0x7C, 106)
+#define RGFW_F14 RGFW_OS_BASED_VALUE(0xffcb, 0x7D, 108)
+#define RGFW_F15 RGFW_OS_BASED_VALUE(0xffcc, 0x7E, 114)
 
-keys will not be reincluded into RSGL
-*/
+#define RGFW_Backtick RGFW_OS_BASED_VALUE(96 , 192, 50)
 
-#ifndef RSGL_H
-#define RSGL_H
+#define RGFW_0 RGFW_OS_BASED_VALUE(0x0030, 0x30, 29)
+#define RGFW_1 RGFW_OS_BASED_VALUE(0x0031, 0x31, 18)
+#define RGFW_2 RGFW_OS_BASED_VALUE(0x0032, 0x32, 19)
+#define RGFW_3 RGFW_OS_BASED_VALUE(0x0033, 0x33, 20)
+#define RGFW_4 RGFW_OS_BASED_VALUE(0x0034, 0x34, 21)
+#define RGFW_5 RGFW_OS_BASED_VALUE(0x0035, 0x35, 23)
+#define RGFW_6 RGFW_OS_BASED_VALUE(0x0036, 0x36, 22)
+#define RGFW_7 RGFW_OS_BASED_VALUE(0x0037, 0x37, 26)
+#define RGFW_8 RGFW_OS_BASED_VALUE(0x0038, 0x38, 28)
+#define RGFW_9 RGFW_OS_BASED_VALUE(0x0039, 0x39, 25)
 
-#ifndef RSGLDEF
+#define RGFW_Minus RGFW_OS_BASED_VALUE(0x002d, 189, 27)
+#define RGFW_Equals RGFW_OS_BASED_VALUE(0x003d, 187, 24)
+#define RGFW_BackSpace RGFW_OS_BASED_VALUE(0xff08, 8, 51)
+#define RGFW_Tab RGFW_OS_BASED_VALUE(0xff89, 0x09, 48)
+#define RGFW_CapsLock RGFW_OS_BASED_VALUE(0xffe5, 20, 57)
+#define RGFW_ShiftL RGFW_OS_BASED_VALUE(0xffe1, 0xA0, 56)
+#define RGFW_ControlL RGFW_OS_BASED_VALUE(0xffe3, 0x11, 59)
+#define RGFW_AltL RGFW_OS_BASED_VALUE(0xffe9, 164, 58)
+#define RGFW_SuperL RGFW_OS_BASED_VALUE(0xffeb, 0x5B, 55) 
+#define RGFW_ShiftR RGFW_OS_BASED_VALUE(0xffe2, 0x5C, 56)
+#define RGFW_ControlR RGFW_OS_BASED_VALUE(0xffe4, 0x11, 59)
+#define RGFW_AltR RGFW_OS_BASED_VALUE(0xffea, 165, 58)
+#define RGFW_SuperR RGFW_OS_BASED_VALUE(0xffec, 0xA4, 55)
+#define RGFW_Space RGFW_OS_BASED_VALUE(0x0020,  0x20, 49)
+
+#define RGFW_A RGFW_OS_BASED_VALUE(0x0041, 0x41, 0)
+#define RGFW_B RGFW_OS_BASED_VALUE(0x0042, 0x42, 11)
+#define RGFW_C RGFW_OS_BASED_VALUE(0x0043, 0x43, 8)
+#define RGFW_D RGFW_OS_BASED_VALUE(0x0044, 0x44, 2)
+#define RGFW_E RGFW_OS_BASED_VALUE(0x0045, 0x45, 14)
+#define RGFW_F RGFW_OS_BASED_VALUE(0x0046, 0x46, 3)
+#define RGFW_G RGFW_OS_BASED_VALUE(0x0047, 0x47, 5)
+#define RGFW_H RGFW_OS_BASED_VALUE(0x0048, 0x48, 4) 
+#define RGFW_I RGFW_OS_BASED_VALUE(0x0049, 0x49, 34)
+#define RGFW_J RGFW_OS_BASED_VALUE(0x004a, 0x4A, 38)
+#define RGFW_K RGFW_OS_BASED_VALUE(0x004b, 0x4B, 40)
+#define RGFW_L RGFW_OS_BASED_VALUE(0x004c, 0x4C, 37)
+#define RGFW_M RGFW_OS_BASED_VALUE(0x004d, 0x4D, 46)
+#define RGFW_N RGFW_OS_BASED_VALUE(0x004e, 0x4E, 45)
+#define RGFW_O RGFW_OS_BASED_VALUE(0x004f, 0x4F, 31)
+#define RGFW_P RGFW_OS_BASED_VALUE(0x0050, 0x50, 35)
+#define RGFW_Q RGFW_OS_BASED_VALUE(0x0051, 0x51, 12)
+#define RGFW_R RGFW_OS_BASED_VALUE(0x0052, 0x52, 15)
+#define RGFW_S RGFW_OS_BASED_VALUE(0x0053, 0x53, 1)
+#define RGFW_T RGFW_OS_BASED_VALUE(0x0054, 0x54, 17)
+#define RGFW_U RGFW_OS_BASED_VALUE(0x0055, 0x55, 32)
+#define RGFW_V RGFW_OS_BASED_VALUE(0x0056, 0x56, 9)
+#define RGFW_W RGFW_OS_BASED_VALUE(0x0057, 0x57, 13)
+#define RGFW_X RGFW_OS_BASED_VALUE(0x0058, 0x58, 7)
+#define RGFW_Y RGFW_OS_BASED_VALUE(0x0059, 0x59, 16)
+#define RGFW_Z RGFW_OS_BASED_VALUE(0x005a, 0x5A, 6)
+
+#define RGFW_a RGFW_OS_BASED_VALUE(0x0061, 0x41, 0)
+#define RGFW_b RGFW_OS_BASED_VALUE(0x0062, 0x42, 11)
+#define RGFW_c RGFW_OS_BASED_VALUE(0x0063, 0x43, 8)
+#define RGFW_d RGFW_OS_BASED_VALUE(0x0064, 0x44, 2)
+#define RGFW_e RGFW_OS_BASED_VALUE(0x0065, 0x45, 14)
+#define RGFW_f RGFW_OS_BASED_VALUE(0x0066, 0x46, 3)
+#define RGFW_g RGFW_OS_BASED_VALUE(0x0067, 0x47, 5)
+#define RGFW_h RGFW_OS_BASED_VALUE(0x0068, 0x48, 4)
+#define RGFW_i RGFW_OS_BASED_VALUE(0x0069, 0x49, 34)
+#define RGFW_j RGFW_OS_BASED_VALUE(0x006a, 0x4a, 38)
+#define RGFW_k RGFW_OS_BASED_VALUE(0x006b, 0x4b, 40)
+#define RGFW_l RGFW_OS_BASED_VALUE(0x006c, 0x4c, 37)
+#define RGFW_m RGFW_OS_BASED_VALUE(0x006d, 0x4d, 46)
+#define RGFW_n RGFW_OS_BASED_VALUE(0x006e, 0x4e, 45)
+#define RGFW_o RGFW_OS_BASED_VALUE(0x006f, 0x4f, 31)
+#define RGFW_p RGFW_OS_BASED_VALUE(0x0070, 0x50, 35)
+#define RGFW_q RGFW_OS_BASED_VALUE(0x0071, 0x51, 12)
+#define RGFW_r RGFW_OS_BASED_VALUE(0x0072, 0x52, 15)
+#define RGFW_s RGFW_OS_BASED_VALUE(0x0073, 0x53, 1)
+#define RGFW_t RGFW_OS_BASED_VALUE(0x0074, 0x54, 17)
+#define RGFW_u RGFW_OS_BASED_VALUE(0x0075, 0x55, 32)
+#define RGFW_v RGFW_OS_BASED_VALUE(0x0076, 0x56, 9)
+#define RGFW_w RGFW_OS_BASED_VALUE(0x0077, 0x57, 13)
+#define RGFW_x RGFW_OS_BASED_VALUE(0x0078, 0x58, 7) 
+#define RGFW_y RGFW_OS_BASED_VALUE(0x0079, 0x59, 16)
+#define RGFW_z RGFW_OS_BASED_VALUE(0x007a, 0x5A, 6)
+
+#define RGFW_Period RGFW_OS_BASED_VALUE(0x002e, 190, 47)
+#define RGFW_Comma RGFW_OS_BASED_VALUE(0x002c, 188, 43)
+#define RGFW_Slash RGFW_OS_BASED_VALUE(0x002f, 191, 44)
+#define RGFW_Bracket RGFW_OS_BASED_VALUE(0x005b, 219, 33)
+#define RGFW_CloseBracket RGFW_OS_BASED_VALUE(0x005d, 221, 30) 
+#define RGFW_Semicolon RGFW_OS_BASED_VALUE(0x003b, 186, 41)
+#define RGFW_Return RGFW_OS_BASED_VALUE(0xff0d, 0x0D, 36) 
+#define RGFW_Quote RGFW_OS_BASED_VALUE(0x0022, 222, 39)
+#define RGFW_BackSlash RGFW_OS_BASED_VALUE(0x005c, 322, 42)
+
+#define RGFW_Up RGFW_OS_BASED_VALUE(0xff52, 0x26, 126)
+#define RGFW_Down RGFW_OS_BASED_VALUE(0xff54, 0x28, 125)
+#define RGFW_Left RGFW_OS_BASED_VALUE(0xff51, 0x25, 123)
+#define RGFW_Right RGFW_OS_BASED_VALUE(0xff53, 0x27, 124)
+
+#define RGFW_Delete RGFW_OS_BASED_VALUE(0xffff, 0x2E, 118)
+#define RGFW_Insert RGFW_OS_BASED_VALUE(0xff63, 0x2D, 115)
+#define RGFW_End RGFW_OS_BASED_VALUE(0xff57, 0x23, 120)
+#define RGFW_Home RGFW_OS_BASED_VALUE(0xff50, 0x24, 116) 
+#define RGFW_PageUp RGFW_OS_BASED_VALUE(0xff55, 336, 117)
+#define RGFW_PageDown RGFW_OS_BASED_VALUE(0xff56, 325, 122)
+
+#define RGFW_Numlock RGFW_OS_BASED_VALUE(0xff7f, 0x90, 72)
+#define RGFW_KP_Slash RGFW_OS_BASED_VALUE(0xffaf, 0x6F, 82)
+#define RGFW_Multiply RGFW_OS_BASED_VALUE(0xffaa, 0x6A, 76)
+#define RGFW_KP_Minus RGFW_OS_BASED_VALUE(0xffad, 0x6D, 67)
+#define RGFW_KP_1 RGFW_OS_BASED_VALUE(0xffb1, 0x61, 84)
+#define RGFW_KP_2 RGFW_OS_BASED_VALUE(0xffb2, 0x62, 85)
+#define RGFW_KP_3 RGFW_OS_BASED_VALUE(0xffb3, 0x63, 86)
+#define RGFW_KP_4 RGFW_OS_BASED_VALUE(0xffb4, 0x64, 87)
+#define RGFW_KP_5 RGFW_OS_BASED_VALUE(0xffb5, 0x65, 88)
+#define RGFW_KP_6 RGFW_OS_BASED_VALUE(0xffb6, 0x66, 89)
+#define RGFW_KP_7 RGFW_OS_BASED_VALUE(0xffb7, 0x67, 90)
+#define RGFW_KP_8 RGFW_OS_BASED_VALUE(0xffb8, 0x68, 92)
+#define RGFW_KP_9 RGFW_OS_BASED_VALUE(0xffb9, 0x619, 93)
+#define RGFW_KP_0 RGFW_OS_BASED_VALUE(0xffb0, 0x60, 83)
+#define RGFW_KP_Period RGFW_OS_BASED_VALUE(0xffae, 0x6E, 65)
+#define RGFW_KP_Return RGFW_OS_BASED_VALUE(0xff8d, 0x92, 77)
+
 #ifdef __APPLE__
-#define RSGLDEF extern inline
+	void* NSCursor_arrowStr(char* str);
+	void NSCursor_performSelector(void* cursor, void* selector);
+#endif
+
+	/* mouse icons */
+#define RGFW_MOUSE_ARROW 				RGFW_OS_BASED_VALUE(68,   32512, NSCursor_arrowStr("arrowCursor"))
+#define RGFW_MOUSE_IBEAM 				RGFW_OS_BASED_VALUE(152,  32513, NSCursor_arrowStr("IBeamCursor"))
+#define RGFW_MOUSE_CROSSHAIR		 	RGFW_OS_BASED_VALUE(34,   32515, NSCursor_arrowStr("crosshairCursor"))
+#define RGFW_MOUSE_POINTING_HAND 		RGFW_OS_BASED_VALUE(60,   32649, NSCursor_arrowStr("pointingHandCursor"))
+#define RGFW_MOUSE_RESIZE_EW 			RGFW_OS_BASED_VALUE(108,  32644, NSCursor_arrowStr("resizeLeftRightCursor"))
+#define RGFW_MOUSE_RESIZE_NS  			RGFW_OS_BASED_VALUE(116,  32645, NSCursor_arrowStr("resizeUpDownCursor"))
+#define RGFW_MOUSE_RESIZE_ALL 			RGFW_OS_BASED_VALUE(52,   32646, NSCursor_arrowStr("closedHandCursor"))
+#define RGFW_MOUSE_RESIZE_NWSE 			RGFW_OS_BASED_VALUE(12,   32642, NSCursor_performSelector(selector("_windowResizeNorthWestSouthEastCursor")))
+#define RGFW_MOUSE_RESIZE_NESW 			RGFW_OS_BASED_VALUE(14,   32643, NSCursor_performSelector(selector("_windowResizeNorthEastSouthWestCursor")))
+#define RGFW_MOUSE_NOT_ALLOWED 			RGFW_OS_BASED_VALUE(0,    32648, NSCursor_arrowStr("operationNotAllowedCursor"))
 #else
-#define RSGLDEF inline
+#include "RGFW.h"
 #endif
-#endif
-
-#define RGFWDEF RSGLDEF
-
-#if !defined(u8)
-    #include <stdint.h>
-
-    typedef uint8_t     u8;
-	typedef int8_t      i8;
-	typedef uint16_t   u16;
-	typedef int16_t    i16;
-	typedef uint32_t   u32;
-	typedef int32_t    i32;
-	typedef uint64_t   u64;
-	typedef int64_t    i64;
-#endif
-
-#define RSGL_between(x, lower, upper) (((lower) <= (x)) && ((x) <= (upper)))
-#define RSGL_ENUM(type, name) type name; enum
-
-
-
-/*  include RGFW here  */
-
-#ifndef RSGL_NO_RGFW
-/* so we're only using one kind of shape data */
-#define RGFW_rect RSGL_rect
-#define RGFW_vector RSGL_point
-#define RGFW_area RSGL_area
-#define GL_SILENCE_DEPRECATION
 #else
 typedef struct {
     u32 type;  /* event type */
@@ -1721,6 +2081,118 @@ RSGLDEF bool RSGL_rectCollidePointF(RSGL_rectF r, RSGL_pointF p);
 RSGLDEF bool RSGL_rectCollideF(RSGL_rectF r, RSGL_rectF r2);
 RSGLDEF bool RSGL_pointCollideF(RSGL_pointF p, RSGL_pointF p2);
 
+#endif /* ndef RSGL_H */
+
+/*
+(Notes on how to manage Silicon (macos) included)
+
+Example to get you started :
+
+linux : gcc main.c -lX11 -lXcursor -lGL
+windows : gcc main.c -lopengl32 -lshell32 -lgdi32
+macos:
+	<Silicon> can be replaced to where you have the Silicon headers stored
+	<libSilicon.a> can be replaced to wherever you have libSilicon.a
+	clang main.c -I<Silicon> <libSilicon.a> -framework Foundation -framework AppKit -framework OpenGL -framework CoreVideo
+
+	NOTE(EimaMei): If you want the MacOS experience to be fully single header, then I'd be best to install Silicon (after compiling)
+	by going to the `Silicon` folder and running `make install`. After this you can easily include Silicon via `#include <Silicon/silicon.h>'
+	and link it by doing `-lSilicon`
+
+#define RSGL_IMPLEMENTATION
+#include "RSGL.h"
+
+int main() {
+    RSGL_window* win = RSGL_createWindow("name", (RSGL_rect){500, 500, 500, 500}, RSGL_CENTER);
+
+
+    for (;;) {
+        RSGL_window_checkEvent(win); // NOTE: checking events outside of a while loop may cause input lag 
+
+        if (win->event.type == RSGL_quit)
+            break;
+
+        RSGL_drawRect((RSGL_rect){200, 200, 200, 200}, RSGL_RGB(255, 0, 0));
+        RSGL_window_clear(win, RSGL_RGB(255, 255, 255));
+    }
+
+    RSGL_window_close(win);
+}
+
+	compiling :
+
+	if you wish to compile the library all you have to do is create a new file with this in it
+
+	RSGL.c
+	#define RSGL_IMPLEMENTATION
+	#include "RSGL.h"
+
+	then you can use gcc (or whatever compile you wish to use) to compile the library into object file
+
+	ex. gcc -c RSGL.c -fPIC
+
+	after you compile the library into an object file, you can also turn the object file into an static or shared library
+
+	(commands ar and gcc can be replaced with whatever equivalent your system uses)
+	static : ar rcs RSGL.a RSGL.o
+	shared :
+		windows:
+			gcc -shared RSGL.o  -lshell32 -lgdi32 -o RSGL.dll
+		linux:
+			gcc -shared RSGL.o -lX11 -lXcursor -o RSGL.so
+		macos:
+			<Silicon/include> can be replaced to where you have the Silicon headers stored
+			<libSilicon.a> can be replaced to wherever you have libSilicon.a
+			gcc -shared RSGL.o -framework Foundation <libSilicon.a> -framework AppKit -framework CoreVideo -I<Silicon/include>
+
+	installing/building silicon (macos)
+
+	Silicon does not need to be installde per se.
+	I personally recommended that you use the Silicon included using RGFW
+
+	to build this version of Silicon simplly run
+
+	cd Silicon && make
+
+	you can then use Silicon/include and libSilicon.a for building RGFW projects
+
+    Alternatively, you also can find pre-built binaries for Silicon at
+    https://github.com/ColleagueRiley/Silicon/tree/binaries
+
+	ex.
+	gcc main.c -framework Foundation -lSilicon -framework AppKit -framework CoreVideo -ISilicon/include
+
+	I also suggest you compile Silicon (and RGFW if applicable)
+	per each time you compile your application so you know that everything is compiled for the same architecture.
+*/
+
+/*
+* Copyright (c) 2021-23 ColleagueRiley ColleagueRiley@gmail.com
+*
+* This software is provided 'as-is', without any express or implied
+* warranty.  In no event will the authors be held liable for any damages
+* arising from the use of this software.
+*
+* Permission is granted to anyone to use this software for any purpose,
+* including commercial applications, and to alter it and redistribute it
+* freely, subject to the following r estrictions:
+*
+* 1. The origin of this software must not be misrepresented; you must not
+* claim that you wrote the original software. If you use this software
+* in a product, an acknowledgment in the product documentation would be
+* appreciated but is not required.
+* 2. Altered source versions must be plainly marked as such, and must not be
+* misrepresented as being the original software.
+* 3. This notice may not be removed or altered from any source distribution.
+*
+*
+*
+
+    define args
+    (MAKE SURE RPHYS_IMPLEMENTATION is in at least one header or you use -DRSGL_IMPLEMENTATION)
+	#define RPHYS_IMPLEMENTATION - makes it so source code is include
+*/
+
 #ifndef RPHYS_H
 #define RPHYS_H
 
@@ -1948,156 +2420,5 @@ RPHYSDEF void RPhys_drawBodiesTextures(u32* textures);
 RPHYSDEF void RPhys_drawBodiesPro(RSGL_color* colors, u32* textures);
 #endif
 
-
-
-#ifdef RGFW_X11
-#define RGFW_OS_BASED_VALUE(l, w, m) l
-#endif
-#ifdef RGFW_WINDOWS
-#define RGFW_OS_BASED_VALUE(l, w, m) w
-#endif
-#ifdef RGFW_MACOS
-#define RGFW_OS_BASED_VALUE(l, w, m) m
-#endif
-
 #endif /* ndef RPHYS_H */
-#endif /* ndef RGFW_H */
-#endif /* ndef */
 
-#define RGFW_Escape RGFW_OS_BASED_VALUE(0xff1b, 0x1B, 53)
-#define RGFW_F1 RGFW_OS_BASED_VALUE(0xffbe, 0x70, 127)
-#define RGFW_F2 RGFW_OS_BASED_VALUE(0xffbf, 0x71, 121)
-#define RGFW_F3 RGFW_OS_BASED_VALUE(0xffc0, 0x72, 100)
-#define RGFW_F4 RGFW_OS_BASED_VALUE(0xffc1, 0x73, 119)
-#define RGFW_F5 RGFW_OS_BASED_VALUE(0xffc2, 0x74, 97)
-#define RGFW_F6 RGFW_OS_BASED_VALUE(0xffc3, 0x75, 98)
-#define RGFW_F7 RGFW_OS_BASED_VALUE(0xffc4, 0x76, 99)
-#define RGFW_F8 RGFW_OS_BASED_VALUE(0xffc5, 0x77, 101)
-#define RGFW_F9 RGFW_OS_BASED_VALUE(0xffc6, 0x78, 102)
-#define RGFW_F10 RGFW_OS_BASED_VALUE(0xffc7, 0x79, 110)
-#define RGFW_F11 RGFW_OS_BASED_VALUE(0xffc8, 0x7A, 104)
-#define RGFW_F12 RGFW_OS_BASED_VALUE(0xffc9, 0x7B, 112)
-#define RGFW_F13 RGFW_OS_BASED_VALUE(0xffca, 0x7C, 106)
-#define RGFW_F14 RGFW_OS_BASED_VALUE(0xffcb, 0x7D, 108)
-#define RGFW_F15 RGFW_OS_BASED_VALUE(0xffcc, 0x7E, 114)
-
-#define RGFW_Backtick RGFW_OS_BASED_VALUE(96 , 192, 50)
-
-#define RGFW_0 RGFW_OS_BASED_VALUE(0x0030, 0x30, 29)
-#define RGFW_1 RGFW_OS_BASED_VALUE(0x0031, 0x31, 18)
-#define RGFW_2 RGFW_OS_BASED_VALUE(0x0032, 0x32, 19)
-#define RGFW_3 RGFW_OS_BASED_VALUE(0x0033, 0x33, 20)
-#define RGFW_4 RGFW_OS_BASED_VALUE(0x0034, 0x34, 21)
-#define RGFW_5 RGFW_OS_BASED_VALUE(0x0035, 0x35, 23)
-#define RGFW_6 RGFW_OS_BASED_VALUE(0x0036, 0x36, 22)
-#define RGFW_7 RGFW_OS_BASED_VALUE(0x0037, 0x37, 26)
-#define RGFW_8 RGFW_OS_BASED_VALUE(0x0038, 0x38, 28)
-#define RGFW_9 RGFW_OS_BASED_VALUE(0x0039, 0x39, 25)
-
-#define RGFW_Minus RGFW_OS_BASED_VALUE(0x002d, 189, 27)
-#define RGFW_Equals RGFW_OS_BASED_VALUE(0x003d, 187, 24)
-#define RGFW_BackSpace RGFW_OS_BASED_VALUE(0xff08, 8, 51)
-#define RGFW_Tab RGFW_OS_BASED_VALUE(0xff89, 0x09, 48)
-#define RGFW_CapsLock RGFW_OS_BASED_VALUE(0xffe5, 20, 57)
-#define RGFW_ShiftL RGFW_OS_BASED_VALUE(0xffe1, 0xA0, 56)
-#define RGFW_ControlL RGFW_OS_BASED_VALUE(0xffe3, 0x11, 59)
-#define RGFW_AltL RGFW_OS_BASED_VALUE(0xffe9, 164, 58)
-#define RGFW_SuperL RGFW_OS_BASED_VALUE(0xffeb, 0x5B, 55) 
-#define RGFW_ShiftR RGFW_OS_BASED_VALUE(0xffe2, 0x5C, 56)
-#define RGFW_ControlR RGFW_OS_BASED_VALUE(0xffe4, 0x11, 59)
-#define RGFW_AltR RGFW_OS_BASED_VALUE(0xffea, 165, 58)
-#define RGFW_SuperR RGFW_OS_BASED_VALUE(0xffec, 0xA4, 55)
-#define RGFW_Space RGFW_OS_BASED_VALUE(0x0020,  0x20, 49)
-
-#define RGFW_A RGFW_OS_BASED_VALUE(0x0041, 0x41, 0)
-#define RGFW_B RGFW_OS_BASED_VALUE(0x0042, 0x42, 11)
-#define RGFW_C RGFW_OS_BASED_VALUE(0x0043, 0x43, 8)
-#define RGFW_D RGFW_OS_BASED_VALUE(0x0044, 0x44, 2)
-#define RGFW_E RGFW_OS_BASED_VALUE(0x0045, 0x45, 14)
-#define RGFW_F RGFW_OS_BASED_VALUE(0x0046, 0x46, 3)
-#define RGFW_G RGFW_OS_BASED_VALUE(0x0047, 0x47, 5)
-#define RGFW_H RGFW_OS_BASED_VALUE(0x0048, 0x48, 4) 
-#define RGFW_I RGFW_OS_BASED_VALUE(0x0049, 0x49, 34)
-#define RGFW_J RGFW_OS_BASED_VALUE(0x004a, 0x4A, 38)
-#define RGFW_K RGFW_OS_BASED_VALUE(0x004b, 0x4B, 40)
-#define RGFW_L RGFW_OS_BASED_VALUE(0x004c, 0x4C, 37)
-#define RGFW_M RGFW_OS_BASED_VALUE(0x004d, 0x4D, 46)
-#define RGFW_N RGFW_OS_BASED_VALUE(0x004e, 0x4E, 45)
-#define RGFW_O RGFW_OS_BASED_VALUE(0x004f, 0x4F, 31)
-#define RGFW_P RGFW_OS_BASED_VALUE(0x0050, 0x50, 35)
-#define RGFW_Q RGFW_OS_BASED_VALUE(0x0051, 0x51, 12)
-#define RGFW_R RGFW_OS_BASED_VALUE(0x0052, 0x52, 15)
-#define RGFW_S RGFW_OS_BASED_VALUE(0x0053, 0x53, 1)
-#define RGFW_T RGFW_OS_BASED_VALUE(0x0054, 0x54, 17)
-#define RGFW_U RGFW_OS_BASED_VALUE(0x0055, 0x55, 32)
-#define RGFW_V RGFW_OS_BASED_VALUE(0x0056, 0x56, 9)
-#define RGFW_W RGFW_OS_BASED_VALUE(0x0057, 0x57, 13)
-#define RGFW_X RGFW_OS_BASED_VALUE(0x0058, 0x58, 7)
-#define RGFW_Y RGFW_OS_BASED_VALUE(0x0059, 0x59, 16)
-#define RGFW_Z RGFW_OS_BASED_VALUE(0x005a, 0x5A, 6)
-
-#define RGFW_a RGFW_OS_BASED_VALUE(0x0061, 0x41, 0)
-#define RGFW_b RGFW_OS_BASED_VALUE(0x0062, 0x42, 11)
-#define RGFW_c RGFW_OS_BASED_VALUE(0x0063, 0x43, 8)
-#define RGFW_d RGFW_OS_BASED_VALUE(0x0064, 0x44, 2)
-#define RGFW_e RGFW_OS_BASED_VALUE(0x0065, 0x45, 14)
-#define RGFW_f RGFW_OS_BASED_VALUE(0x0066, 0x46, 3)
-#define RGFW_g RGFW_OS_BASED_VALUE(0x0067, 0x47, 5)
-#define RGFW_h RGFW_OS_BASED_VALUE(0x0068, 0x48, 4)
-#define RGFW_i RGFW_OS_BASED_VALUE(0x0069, 0x49, 34)
-#define RGFW_j RGFW_OS_BASED_VALUE(0x006a, 0x4a, 38)
-#define RGFW_k RGFW_OS_BASED_VALUE(0x006b, 0x4b, 40)
-#define RGFW_l RGFW_OS_BASED_VALUE(0x006c, 0x4c, 37)
-#define RGFW_m RGFW_OS_BASED_VALUE(0x006d, 0x4d, 46)
-#define RGFW_n RGFW_OS_BASED_VALUE(0x006e, 0x4e, 45)
-#define RGFW_o RGFW_OS_BASED_VALUE(0x006f, 0x4f, 31)
-#define RGFW_p RGFW_OS_BASED_VALUE(0x0070, 0x50, 35)
-#define RGFW_q RGFW_OS_BASED_VALUE(0x0071, 0x51, 12)
-#define RGFW_r RGFW_OS_BASED_VALUE(0x0072, 0x52, 15)
-#define RGFW_s RGFW_OS_BASED_VALUE(0x0073, 0x53, 1)
-#define RGFW_t RGFW_OS_BASED_VALUE(0x0074, 0x54, 17)
-#define RGFW_u RGFW_OS_BASED_VALUE(0x0075, 0x55, 32)
-#define RGFW_v RGFW_OS_BASED_VALUE(0x0076, 0x56, 9)
-#define RGFW_w RGFW_OS_BASED_VALUE(0x0077, 0x57, 13)
-#define RGFW_x RGFW_OS_BASED_VALUE(0x0078, 0x58, 7) 
-#define RGFW_y RGFW_OS_BASED_VALUE(0x0079, 0x59, 16)
-#define RGFW_z RGFW_OS_BASED_VALUE(0x007a, 0x5A, 6)
-
-#define RGFW_Period RGFW_OS_BASED_VALUE(0x002e, 190, 47)
-#define RGFW_Comma RGFW_OS_BASED_VALUE(0x002c, 188, 43)
-#define RGFW_Slash RGFW_OS_BASED_VALUE(0x002f, 191, 44)
-#define RGFW_Bracket RGFW_OS_BASED_VALUE(0x005b, 219, 33)
-#define RGFW_CloseBracket RGFW_OS_BASED_VALUE(0x005d, 221, 30) 
-#define RGFW_Semicolon RGFW_OS_BASED_VALUE(0x003b, 186, 41)
-#define RGFW_Return RGFW_OS_BASED_VALUE(0xff0d, 0x0D, 36) 
-#define RGFW_Quote RGFW_OS_BASED_VALUE(0x0022, 222, 39)
-#define RGFW_BackSlash RGFW_OS_BASED_VALUE(0x005c, 322, 42)
-
-#define RGFW_Up RGFW_OS_BASED_VALUE(0xff52, 0x26, 126)
-#define RGFW_Down RGFW_OS_BASED_VALUE(0xff54, 0x28, 125)
-#define RGFW_Left RGFW_OS_BASED_VALUE(0xff51, 0x25, 123)
-#define RGFW_Right RGFW_OS_BASED_VALUE(0xff53, 0x27, 124)
-
-#define RGFW_Delete RGFW_OS_BASED_VALUE(0xffff, 0x2E, 118)
-#define RGFW_Insert RGFW_OS_BASED_VALUE(0xff63, 0x2D, 115)
-#define RGFW_End RGFW_OS_BASED_VALUE(0xff57, 0x23, 120)
-#define RGFW_Home RGFW_OS_BASED_VALUE(0xff50, 0x24, 116) 
-#define RGFW_PageUp RGFW_OS_BASED_VALUE(0xff55, 336, 117)
-#define RGFW_PageDown RGFW_OS_BASED_VALUE(0xff56, 325, 122)
-
-#define RGFW_Numlock RGFW_OS_BASED_VALUE(0xff7f, 0x90, 72)
-#define RGFW_KP_Slash RGFW_OS_BASED_VALUE(0xffaf, 0x6F, 82)
-#define RGFW_Multiply RGFW_OS_BASED_VALUE(0xffaa, 0x6A, 76)
-#define RGFW_KP_Minus RGFW_OS_BASED_VALUE(0xffad, 0x6D, 67)
-#define RGFW_KP_1 RGFW_OS_BASED_VALUE(0xffb1, 0x61, 84)
-#define RGFW_KP_2 RGFW_OS_BASED_VALUE(0xffb2, 0x62, 85)
-#define RGFW_KP_3 RGFW_OS_BASED_VALUE(0xffb3, 0x63, 86)
-#define RGFW_KP_4 RGFW_OS_BASED_VALUE(0xffb4, 0x64, 87)
-#define RGFW_KP_5 RGFW_OS_BASED_VALUE(0xffb5, 0x65, 88)
-#define RGFW_KP_6 RGFW_OS_BASED_VALUE(0xffb6, 0x66, 89)
-#define RGFW_KP_7 RGFW_OS_BASED_VALUE(0xffb7, 0x67, 90)
-#define RGFW_KP_8 RGFW_OS_BASED_VALUE(0xffb8, 0x68, 92)
-#define RGFW_KP_9 RGFW_OS_BASED_VALUE(0xffb9, 0x619, 93)
-#define RGFW_KP_0 RGFW_OS_BASED_VALUE(0xffb0, 0x60, 83)
-#define RGFW_KP_Period RGFW_OS_BASED_VALUE(0xffae, 0x6E, 65)
-#define RGFW_KP_Return RGFW_OS_BASED_VALUE(0xff8d, 0x92, 77)
