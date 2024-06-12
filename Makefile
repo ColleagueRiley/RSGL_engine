@@ -56,6 +56,9 @@ release_example:
 	mkdir -p release/tinycc
 	cp -r tinycc/include tinycc/runmain.o tinycc/libtcc1.a ./release/tinycc
 	cp -r test.c RSGL.h ./RSGL_engine$(EXT) run.sh run.bat SuperEasy.ttf image.png ./release
+ifeq ($(detected_OS),Windows)
+	cp tinycc/libtcc.dll ./release/tinycc
+endif
 
 test:
 	@for header in $(HEADER_FILES); do \
