@@ -13,7 +13,15 @@ more features will probably be added in the future
     - physics library
     - init, collideEvent and eventLoop functions
     - pause physics sim (with control + d)
+    - get libtcc to be properly statically linked (windows)
 
 # features todo
-    - save new cords when sprite is moved (optionally)
-    - auto create RSGL.h (combined defs of the RGFW, rphys and RSGL.h )
+    - draw outline when physics object is hovered, moved or pressed
+    - show physics object x, y if it's pressed
+
+    - get sprite distance to pointer 
+    - broadcast / get message (functional call)
+
+    to RGFW
+    -> window_getMouse (x, y)
+    -> RGFW_isMousePressed() (mouse)
