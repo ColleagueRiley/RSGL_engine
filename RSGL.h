@@ -1,3 +1,4 @@
+void RSGL_sendMessage(int msg, void* data);
 /*
 * Copyright (c) 2021-23 ColleagueRiley ColleagueRiley@gmail.com
 *
@@ -895,6 +896,9 @@ typedef struct { i32 x, y; } RGFW_vector;
 	/* where the mouse is on the screen */
 	RGFWDEF RGFW_vector RGFW_getGlobalMousePoint(void);
 
+	/* where the mouse is on the window */
+	RGFWDEF RGFW_vector RGFW_window_getMousePoint(RGFW_window* win);
+
 	/* show the mouse or hide the mouse*/
 	RGFWDEF void RGFW_window_showMouse(RGFW_window* win, i8 show);
 	/* move the mouse to a set x, y pos*/
@@ -932,6 +936,11 @@ typedef struct { i32 x, y; } RGFW_vector;
 
 	RGFWDEF u8 RGFW_isHeldI(RGFW_window* win, u32 key); /*!< if key is held (key code)*/
 	RGFWDEF u8 RGFW_isReleasedI(RGFW_window* win, u32 key); /*!< if key is released (key code)*/
+
+	RGFWDEF u8 RGFW_isMousePressed(RGFW_window* win, u8 button);
+	RGFWDEF u8 RGFW_isMouseHeld(RGFW_window* win, u8 button);
+	RGFWDEF u8 RGFW_isMouseReleased(RGFW_window* win, u8 button);
+	RGFWDEF u8 RGFW_wasMousePressed(RGFW_window* win, u8 button);
 
 	/*
 		!!Keycodes defined at the bottom of the header file!!

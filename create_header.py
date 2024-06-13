@@ -19,6 +19,8 @@ def addFile(filename):
 
 fileNames = ["./include/RSGL.h", "./include/rphys.h"]
 
+headerFile.write("void RSGL_sendMessage(int msg, void* data);\n")
+
 for filename in fileNames:
     addFile(filename)
 
