@@ -65,7 +65,7 @@ int main(int argc, char ** argv) {
                     for (index = 0; index < RPhys_len; index++) {
                         RPhys_body* body = RPhys_bodies[index];
                         sprite* sprite = &sprites[index]; 
-
+                        
                         if (sprite->pressed == false) 
                             continue;
                         
@@ -95,7 +95,7 @@ int main(int argc, char ** argv) {
         if (win->event.type == RSGL_quit)
             break;
 
-        u32 i;
+        i32 i;
         for (i = 1; i < argc; i++) {
             if (argv[i][0] == '-') {
                 if (rElEaSeMoDe == false && strcmp(argv[i], "--release") == 0)
@@ -107,13 +107,21 @@ int main(int argc, char ** argv) {
             if (file.mainFunc != NULL)
                 file.mainFunc();
         }
-
+        
         RSGL_setTexture(0);
     
         if (RSGL_isPressedI(win, RGFW_ControlL) && !rElEaSeMoDe) {
-            char* str = RSGL_strFmt("%i, %i", win->event.point.x, win->event.point.y);
+            char* str = (char*)RSGL_strFmt("%i, %i", win->event.point.x, win->event.point.y);
             RSGL_drawRect(RSGL_RECT(win->event.point.x, win->event.point.y, 100, 20), RSGL_RGBA(80, 80, 80, 100));
             RSGL_drawText(str, RSGL_CIRCLE(20 + win->event.point.x, win->event.point.y, 20), RSGL_RGB(0, 0, 0));
+        
+            u32 index = 0;
+            for (index = 0; index < RPhys_len; index++) {
+                RSGL_rectF rect = RPhys_shape_getRect(RPhys_bodies[index]->shape);
+                char* str = (char*)RSGL_strFmt("%i, %i", (u32)rect.x, (u32)rect.y);
+                RSGL_drawRect(RSGL_RECT(rect.x + ((rect.w - 100) / 2), rect.y + (rect.h / 2), 100, 20), RSGL_RGBA(80, 80, 80, 100));
+                RSGL_drawText(str, RSGL_CIRCLE(rect.x + ((rect.w - 50) / 2), rect.y + (rect.h / 2), 20), RSGL_RGB(0, 0, 0));
+            }
         }
 
         if (phys_pause == false)
@@ -124,6 +132,11 @@ int main(int argc, char ** argv) {
     
     free(sprites);
     RPhys_free();
-    tcc_delete(tccState);
+
+    u32 index = 0;
+    for (index = 0; index < files_len; index++) {
+        tcc_delete(files[index].tccState);
+    }
+    
     RSGL_window_close(win);
 }

@@ -5,19 +5,27 @@
 #include <sys/stat.h>
 
 
-TCCState* tccState = NULL;
-
 typedef struct c_file {
+    TCCState* tccState;
     char* fileName;
     void (*mainFunc)();
     void (*eventFunc)(RGFW_Event);
     void (*collideFunc)(RPhys_body*, RPhys_body*);
+    void (*messageFunc)(i32, void*);
     struct stat lastFileStat;
     bool inited;
 } c_file;
 
 c_file files[200];
 size_t files_len = 0;
+
+void RSGL_sendMessage(i32 msg, void* data) {
+    u32 i;
+    for (i = 0; i < files_len; i++) {
+        if (files[i].messageFunc != NULL)
+            files[i].messageFunc(msg, data);
+    }
+}
 
 void error_func(void * user, const char * msg) {
     printf("TCC Error: %s\n", msg);
@@ -251,6 +259,7 @@ void add_RSGL_symbols(TCCState* s) {
     tcc_add_symbol(s, "RPhys_drawBodiesColors", RPhys_drawBodiesColors);
     tcc_add_symbol(s, "RPhys_drawBodiesTextures", RPhys_drawBodiesTextures);
     tcc_add_symbol(s, "RPhys_drawBodiesPro", RPhys_drawBodiesPro);
+    tcc_add_symbol(s, "RSGL_sendMessage", RSGL_sendMessage);
 }
 
 void RPhys_collideCallback(RPhys_body* body1, RPhys_body* body2) {
@@ -264,15 +273,17 @@ void RPhys_collideCallback(RPhys_body* body1, RPhys_body* body2) {
 c_file compile_file(char* fileName, RSGL_window* win) {
     u32 i;
     for (i = 0; i < files_len; i++) {
-        if (strcmp(files->fileName, fileName) == 0)
+        if (strcmp(files[i].fileName, fileName) == 0)
             break;
     }
 
     if (files_len == i) {
         files[i].fileName = fileName;
+        files[i].tccState = NULL;
         files[i].mainFunc = NULL;
         files[i].eventFunc = NULL;
         files[i].collideFunc = NULL;
+        files[i].messageFunc = NULL;
         files[i].inited = false;
         files_len++;
     }
@@ -289,13 +300,13 @@ c_file compile_file(char* fileName, RSGL_window* win) {
         return files[i];
     }
      
-    if (tccState != NULL)
-        tcc_delete(tccState);
+    if (files[i].tccState != NULL)
+        tcc_delete(files[i].tccState);
+    
+    files[i].tccState = tcc_new();
 
-    tccState = tcc_new();
-
-    tcc_set_output_type(tccState, TCC_OUTPUT_MEMORY);
-    tcc_set_error_func(tccState, 0, error_func);
+    tcc_set_output_type(files[i].tccState, TCC_OUTPUT_MEMORY);
+    tcc_set_error_func(files[i].tccState, 0, error_func);
 
     FILE* file = fopen(fileName, "r");
     fseek(file, 0, SEEK_END);
@@ -307,35 +318,36 @@ c_file compile_file(char* fileName, RSGL_window* win) {
     fclose(file);
     file_ptr[len] = '\0';
 
-    tcc_add_include_path(tccState, "./");
-    tcc_add_include_path(tccState, "tinycc/include");
-    tcc_add_library_path(tccState, "tinycc");
+    tcc_add_include_path(files[i].tccState, "./");
+    tcc_add_include_path(files[i].tccState, "tinycc/include");
+    tcc_add_library_path(files[i].tccState, "tinycc");
 
-    if (tcc_compile_string(tccState, file_ptr) == -1) {
+    if (tcc_compile_string(files[i].tccState, file_ptr) == -1) {
         files[i].mainFunc = NULL;
         files[i].eventFunc = NULL;
         files[i].collideFunc = NULL;
+        files[i].messageFunc = NULL;
         
         return files[i];
     }
 
-    add_RSGL_symbols(tccState);    
+    add_RSGL_symbols(files[i].tccState);    
+    
+    tcc_run(files[i].tccState, 0, NULL);
 
-    tcc_run(tccState, 0, NULL);
-
-    free(file_ptr);
-
-    void* initFunc = tcc_get_symbol(tccState, "init");
+    void* initFunc = tcc_get_symbol(files[i].tccState, "init");
     if (initFunc != NULL)
         ((void (*)()) initFunc)(win);
-
-    files[i].eventFunc = tcc_get_symbol(tccState, "eventLoop");
-    files[i].collideFunc = tcc_get_symbol(tccState, "collideEvent");
-    files[i].mainFunc = tcc_get_symbol(tccState, "main");
+    files[i].eventFunc = tcc_get_symbol(files[i].tccState, "eventLoop");
+    files[i].collideFunc = tcc_get_symbol(files[i].tccState, "collideEvent");
+    files[i].messageFunc = tcc_get_symbol(files[i].tccState, "getMessage");
+    files[i].mainFunc = tcc_get_symbol(files[i].tccState, "main");
 
     files[i].lastFileStat = fileStat;
 
     files[i].inited = true;
+
+    free(file_ptr);
 
     return files[i];
 }
