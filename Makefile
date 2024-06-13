@@ -48,25 +48,17 @@ RSGL_engine: source/* include/*
 debug:
 	make tinycc/libtcc$(EXT_TCC)
 	$(CC) source/main.c $(LIBS) -I./include -I./tinycc tinycc/libtcc$(EXT_TCC) -o RSGL_engine
-	./RSGL_engine test.c
+	./RSGL_engine test.c test2.c
 
 release_example:
 	make RSGL_engine
 	mkdir -p release
 	mkdir -p release/tinycc
 	cp -r tinycc/include tinycc/runmain.o tinycc/libtcc1.a ./release/tinycc
-	cp -r test.c RSGL.h ./RSGL_engine$(EXT) run.sh run.bat SuperEasy.ttf image.png ./release
+	cp -r test.c test2.c RSGL.h ./RSGL_engine$(EXT) run.sh run.bat SuperEasy.ttf image.png ./release
 ifeq ($(EXT),.exe)
 	cp tinycc/libtcc.dll ./release/tinycc
 endif
 
-test:
-	@for header in $(HEADER_FILES); do \
-		while IFS= read -r line; do \
-			if echo $$line | grep -q '^#ifdef [A-Z0-9_]*_IMPLEMENTATION'; then \
-				break; \
-			fi; \
-			echo $$line >> $(OUTPUT_HEADER); \
-		done < $$header; \
-		echo "" >> $(OUTPUT_HEADER); \
-	done
+RSGL.h:
+	python create_header.py
