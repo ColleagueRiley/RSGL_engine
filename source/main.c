@@ -1,3 +1,4 @@
+#define RGFW_NO_THREADS
 #define RSGL_IMPLEMENTATION
 #include "RSGL.h"
 
