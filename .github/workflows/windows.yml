@@ -23,6 +23,18 @@ jobs:
     permissions:
       contents: write  # for actions/upload-release-asset to upload release asset
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        compiler: [mingw-w64]
+        bits: [64]
+        include:
+        - compiler: mingw-w64
+          bits: 64
+          ARCH: "x86_64"
+          WINDRES_ARCH: pe-x86-64
+
     env:
       RELEASE_NAME: RSGL_engine-dev_win${{ matrix.bits }}_${{ matrix.compiler }}
       GNUTARGET: default
@@ -63,21 +75,21 @@ jobs:
       run: |
         copy /Y .\RSGL_engine.exe .\build\${{ env.RELEASE_NAME }}\bin
         xcopy .\release .\build\${{ env.RELEASE_NAME }}\release /E /I /Y
-        7z a ./${{ env.RELEASE_NAME }}.zip ./${{ env.RELEASE_NAME }}/bin
-        7z a ./${{ env.RELEASE_NAME }}-example.zip ./${{ env.RELEASE_NAME }}/release
+        cd build
+        7z a ./${{ env.RELEASE_NAME }}.zip ./${{ env.RELEASE_NAME }}
         dir
       shell: cmd
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.RELEASE_NAME }}.zip ${{ env.RELEASE_NAME }}-example.zip
-        path: ./build/${{ env.RELEASE_NAME }}.zip ./build/${{ env.RELEASE_NAME }}-example.zip
+        name: ${{ env.RELEASE_NAME }}.zip
+        path: ./build/${{ env.RELEASE_NAME }}.zip
         
     - name: Upload Artifact to Release
       uses: softprops/action-gh-release@v1
       with:
-        files: ./build/${{ env.RELEASE_NAME }}.zip ${{ env.RELEASE_NAME }}-example.zip
+        files: ./build/${{ env.RELEASE_NAME }}.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       if: github.event_name == 'release' && github.event.action == 'published'
