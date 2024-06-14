@@ -210,9 +210,6 @@ void add_RSGL_symbols(TCCState* s) {
     tcc_add_symbol(s, "RGFW_readClipboard", RGFW_readClipboard);
     tcc_add_symbol(s, "RGFW_writeClipboard", RGFW_writeClipboard);
     tcc_add_symbol(s, "RGFW_keystrToChar", RGFW_keystrToChar);
-    tcc_add_symbol(s, "RGFW_createThread", RGFW_createThread);
-    tcc_add_symbol(s, "RGFW_cancelThread", RGFW_cancelThread);
-    tcc_add_symbol(s, "RGFW_joinThread", RGFW_joinThread);
     tcc_add_symbol(s, "RGFW_registerJoystick", RGFW_registerJoystick);
     tcc_add_symbol(s, "RGFW_registerJoystickF", RGFW_registerJoystickF);
     tcc_add_symbol(s, "RGFW_isPressedJS", RGFW_isPressedJS);
