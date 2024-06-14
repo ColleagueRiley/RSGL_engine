@@ -1,6 +1,6 @@
 CC = gcc
 
-LIBS := -Bstatic -lwinpthread -lgdi32 -lm -lopengl32 -lwinmm -ggdb -lm
+LIBS := -Bstatic -lgdi32 -lm -lopengl32 -lwinmm -ggdb -lm
 EXT = .exe
 EXT_TCC = .dll
 
@@ -19,7 +19,7 @@ else
 endif
 
 ifeq ($(detected_OS),Windows)
-	LIBS := -Bstatic -lwinpthread -ggdb -lshell32 -lwinmm -lgdi32 -lopengl32 
+	LIBS := -Bstatic -ggdb -lshell32 -lwinmm -lgdi32 -lopengl32 
 	EXT = .exe
 	EXT_TCC = .dll
 endif
@@ -57,7 +57,7 @@ release_example:
 	cp -r tinycc/include tinycc/runmain.o tinycc/libtcc1.a ./release/tinycc
 	cp -r test.c test2.c RSGL.h ./RSGL_engine$(EXT) run.sh run.bat SuperEasy.ttf image.png ./release
 ifeq ($(EXT),.exe)
-	cp tinycc/libtcc.dll ./release/tinycc
+	cp tinycc/libtcc.dll ./release/
 endif
 
 RSGL.h:
