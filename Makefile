@@ -52,13 +52,18 @@ debug:
 
 release_example:
 	make RSGL_engine
+
+	echo "char* objfiles[] = {\"test.o\", \"test2.o\"}; size_t objfiles_len = 2;" > ./include/objfiles.h
+	$(CC) -c test.c 
+	$(CC) -c test2.c
+	$(CC) source/release.c $(LIBS) -I./include -I./source -I./tinycc tinycc/libtcc$(EXT_TCC) -o test-release
+	rm ./include/objfiles.h 
+
 	mkdir -p release
 	mkdir -p release/tinycc
 	cp -r tinycc/include tinycc/runmain.o tinycc/libtcc1.a ./release/tinycc
-	cp -r test.c test2.c RSGL.h ./RSGL_engine$(EXT) run.sh run.bat SuperEasy.ttf image.png ./release
-ifeq ($(EXT),.exe)
-	cp tinycc/libtcc.dll ./release/
-endif
+	cp -r RSGL.h image.png ./release
+	mv test-release test.o test2.o ./release
 
 RSGL.h:
 	python create_header.py

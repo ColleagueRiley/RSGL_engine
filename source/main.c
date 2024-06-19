@@ -18,7 +18,6 @@ int main(int argc, char ** argv) {
         return -1;
     }
 
-    bool rElEaSeMoDe = false; /* in rElEaSe MoDe */
     bool phys_pause = false;
   
     RPhys_init();
@@ -48,7 +47,7 @@ int main(int argc, char ** argv) {
                     break;
                 
                 case RGFW_mouseButtonPressed:  
-                    if (RSGL_isPressedI(win, RGFW_ControlL) && !rElEaSeMoDe) {
+                    if (RSGL_isPressedI(win, RGFW_ControlL)) {
                         u32 index = 0;
                         for (index = 0; index < RPhys_len; index++) {
                             RPhys_body* body = RPhys_bodies[index];
@@ -96,14 +95,8 @@ int main(int argc, char ** argv) {
         if (win->event.type == RSGL_quit)
             break;
 
-        i32 i;
+        size_t i;
         for (i = 1; i < argc; i++) {
-            if (argv[i][0] == '-') {
-                if (rElEaSeMoDe == false && strcmp(argv[i], "--release") == 0)
-                    rElEaSeMoDe = true;
-                continue;
-            }
-
             c_file file = compile_file(argv[i], win);
             if (file.mainFunc != NULL)
                 file.mainFunc();
@@ -111,7 +104,7 @@ int main(int argc, char ** argv) {
         
         RSGL_setTexture(0);
     
-        if (RSGL_isPressedI(win, RGFW_ControlL) && !rElEaSeMoDe) {
+        if (RSGL_isPressedI(win, RGFW_ControlL)) {
             char* str = (char*)RSGL_strFmt("%i, %i", win->event.point.x, win->event.point.y);
             RSGL_drawRect(RSGL_RECT(win->event.point.x, win->event.point.y, 100, 20), RSGL_RGBA(80, 80, 80, 100));
             RSGL_drawText(str, RSGL_CIRCLE(20 + win->event.point.x, win->event.point.y, 20), RSGL_RGB(0, 0, 0));

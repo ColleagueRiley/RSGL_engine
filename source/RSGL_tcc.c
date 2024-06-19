@@ -305,21 +305,12 @@ c_file compile_file(char* fileName, RSGL_window* win) {
     tcc_set_output_type(files[i].tccState, TCC_OUTPUT_MEMORY);
     tcc_set_error_func(files[i].tccState, 0, error_func);
 
-    FILE* file = fopen(fileName, "r");
-    fseek(file, 0, SEEK_END);
-    size_t len = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    char* file_ptr = malloc(len + 1);
-    fread(file_ptr, 1, len, file);
-    fclose(file);
-    file_ptr[len] = '\0';
-
     tcc_add_include_path(files[i].tccState, "./");
+    tcc_add_include_path(files[i].tccState, "./include");
     tcc_add_include_path(files[i].tccState, "tinycc/include");
     tcc_add_library_path(files[i].tccState, "tinycc");
 
-    if (tcc_compile_string(files[i].tccState, file_ptr) == -1) {
+    if (tcc_add_file(files[i].tccState, fileName) == -1) {
         files[i].mainFunc = NULL;
         files[i].eventFunc = NULL;
         files[i].collideFunc = NULL;
@@ -343,8 +334,6 @@ c_file compile_file(char* fileName, RSGL_window* win) {
     files[i].lastFileStat = fileStat;
 
     files[i].inited = true;
-
-    free(file_ptr);
 
     return files[i];
 }
