@@ -65,5 +65,9 @@ release_example:
 	cp -r RSGL.h image.png ./release
 	mv test-release test.o test2.o ./release
 
+	ifeq ($(EXT),.exe)
+		cp tinycc/libtcc.dll ./release/
+	endif
+
 RSGL.h:
 	python create_header.py
