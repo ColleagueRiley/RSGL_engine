@@ -1,6 +1,6 @@
 CC = gcc
 
-LIBS := -Bstatic -lgdi32 -lm -lopengl32 -lwinmm -ggdb -lm
+LIBS := -static -lgdi32 -lm -lopengl32 -lwinmm -ggdb -lm
 EXT = .exe
 EXT_TCC = .dll
 
@@ -19,7 +19,7 @@ else
 endif
 
 ifeq ($(detected_OS),Windows)
-	LIBS := -Bstatic -ggdb -lshell32 -lwinmm -lgdi32 -lopengl32 
+	LIBS := -static -lshell32 -lwinmm -lgdi32 -lopengl32 
 	EXT = .exe
 	EXT_TCC = .dll
 endif
@@ -34,21 +34,21 @@ ifeq ($(detected_OS),Linux)
 	EXT_TCC = .a
 endif
 
+RSGL_engine: source/* include/*
+	#make tinycc/libtcc$(EXT_TCC)
+	$(CC) source/main.c $(LIBS) -I./include -I./tinycc tinycc/libtcc$(EXT_TCC) -o $@
+
+debug:
+	#make tinycc/libtcc$(EXT_TCC)
+	$(CC) source/main.c $(LIBS) -I./include -I./tinycc tinycc/libtcc$(EXT_TCC) -o RSGL_engine
+	./RSGL_engine$(EXT) test.c test2.c
+
 tinycc:
 	git clone https://repo.or.cz/tinycc.git
 
 tinycc/libtcc$(EXT_TCC):
 	make tinycc
 	cd tinycc && ./configure && make
-
-RSGL_engine: source/* include/*
-	make tinycc/libtcc$(EXT_TCC)
-	$(CC) source/main.c $(LIBS) -I./include -I./tinycc tinycc/libtcc$(EXT_TCC) -o $@
-
-debug:
-	make tinycc/libtcc$(EXT_TCC)
-	$(CC) source/main.c $(LIBS) -I./include -I./tinycc tinycc/libtcc$(EXT_TCC) -o RSGL_engine
-	./RSGL_engine test.c test2.c
 
 release_example:
 	make RSGL_engine
