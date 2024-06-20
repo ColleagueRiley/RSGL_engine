@@ -19,7 +19,7 @@ else
 endif
 
 ifeq ($(detected_OS),Windows)
-	LIBS := -Bstatic -no-pthread -ggdb -lshell32 -lwinmm -lgdi32 -lopengl32 
+	LIBS := -Bstatic -ggdb -lshell32 -lwinmm -lgdi32 -lopengl32 
 	EXT = .exe
 	EXT_TCC = .dll
 endif
