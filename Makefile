@@ -2,7 +2,7 @@ CC = gcc
 TCC = tinycc/tcc
 
 LIBS := -static -lgdi32 -lm -lopengl32 -lwinmm -lm
-WINTCC = -I./tinycc/win32/include -I./tinycc/win32/lib
+WINTCC = -I./tinycc/win32/include -I./tinycc/win32/include/winapi -I./tinycc/win32/lib
 EXT = .exe
 EXT_TCC = .dll
 
