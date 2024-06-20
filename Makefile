@@ -1,6 +1,6 @@
 CC = gcc
 
-LIBS := -Bstatic -no-pthread -lgdi32 -lm -lopengl32 -lwinmm -ggdb -lm
+LIBS := -Bstatic -lgdi32 -lm -lopengl32 -lwinmm -ggdb -lm
 EXT = .exe
 EXT_TCC = .dll
 
