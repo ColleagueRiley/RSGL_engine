@@ -1,4 +1,5 @@
 #include "RSGL.h"
+#include "rphys.h"
 #include <stdio.h>
 
 RSGL_color color = RSGL_RGB(255, 0, 0);

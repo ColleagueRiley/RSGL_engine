@@ -1,4 +1,5 @@
 #include "RSGL.h"
+#include "rphys.h"
 #include <stdio.h>
 
 RSGL_image image;

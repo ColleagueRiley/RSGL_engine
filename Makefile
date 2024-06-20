@@ -68,7 +68,6 @@ release_example:
 	mkdir -p release
 	mkdir -p release/tinycc
 	cp -r tinycc/include tinycc/runmain.o tinycc/libtcc1.a ./release/tinycc
-	cp -r RSGL.h image.png ./release
 	mv test-release test.o test2.o ./release
 
 ifeq ($(EXT),.exe)
