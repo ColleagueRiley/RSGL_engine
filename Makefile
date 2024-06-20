@@ -60,7 +60,7 @@ release_example:
 
 	echo "char* objfiles[] = {\"test.o\", \"test2.o\"}; size_t objfiles_len = 2;" > ./include/objfiles.h
 	$(TCC) -c -I./include -I./tinycc/include $(WINTCC) test.c 
-	$(TCC) -c -I./include I./tinycc/include $(WINTCC) test2.c 
+	$(TCC) -c -I./include -I./tinycc/include $(WINTCC) test2.c 
 
 	$(CC) source/release.c $(LIBS) -I./include -I./source -I./tinycc tinycc/libtcc$(EXT_TCC) -o test-release
 	rm ./include/objfiles.h 
