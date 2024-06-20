@@ -2,6 +2,7 @@ CC = gcc
 TCC = tinycc/tcc
 
 LIBS := -static -lgdi32 -lm -lopengl32 -lwinmm -lm
+WINTCC = -I./tinycc/win32/include -I./tinycc/win32/lib
 EXT = .exe
 EXT_TCC = .dll
 
@@ -22,15 +23,18 @@ endif
 ifeq ($(detected_OS),Windows)
 	LIBS := -static -lshell32 -lwinmm -lgdi32 -lopengl32 
 	EXT = .exe
+	WINTCC = -I./tinycc/win32/include -I./tinycc/win32/lib
 	EXT_TCC = .dll
 endif
 ifeq ($(detected_OS),Darwin)        # Mac OS X
 	LIBS := -lm -framework Foundation -framework AppKit -framework OpenGL -framework CoreVideo
 	EXT = 
+	WINTCC = 
 	EXT_TCC = .a
 endif
 ifeq ($(detected_OS),Linux)
     LIBS := -lXrandr -lX11 -lm -lGL -ldl -lpthread
+	WINTCC =
 	EXT =
 	EXT_TCC = .a
 endif
@@ -55,8 +59,8 @@ release_example:
 	make RSGL_engine
 
 	echo "char* objfiles[] = {\"test.o\", \"test2.o\"}; size_t objfiles_len = 2;" > ./include/objfiles.h
-	$(TCC) -c -I./tinycc/include test.c 
-	$(TCC) -c -I./tinycc/include test2.c 
+	$(TCC) -c -I./tinycc/include $(WINTCC) test.c 
+	$(TCC) -c -I./tinycc/include $(WINTCC) test2.c 
 
 	$(CC) source/release.c $(LIBS) -I./include -I./source -I./tinycc tinycc/libtcc$(EXT_TCC) -o test-release
 	rm ./include/objfiles.h 
