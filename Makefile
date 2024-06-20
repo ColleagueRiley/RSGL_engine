@@ -1,6 +1,7 @@
 CC = gcc
+TCC = tinycc/tcc
 
-LIBS := -static -lgdi32 -lm -lopengl32 -lwinmm -ggdb -lm
+LIBS := -static -lgdi32 -lm -lopengl32 -lwinmm -lm
 EXT = .exe
 EXT_TCC = .dll
 
@@ -54,8 +55,9 @@ release_example:
 	make RSGL_engine
 
 	echo "char* objfiles[] = {\"test.o\", \"test2.o\"}; size_t objfiles_len = 2;" > ./include/objfiles.h
-	$(CC) -c test.c 
-	$(CC) -c test2.c
+	$(TCC) -c -I./tinycc/include test.c 
+	$(TCC) -c -I./tinycc/include test2.c 
+
 	$(CC) source/release.c $(LIBS) -I./include -I./source -I./tinycc tinycc/libtcc$(EXT_TCC) -o test-release
 	rm ./include/objfiles.h 
 
