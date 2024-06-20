@@ -308,7 +308,13 @@ c_file compile_file(char* fileName, RSGL_window* win) {
     tcc_add_include_path(files[i].tccState, "./");
     tcc_add_include_path(files[i].tccState, "./include");
     tcc_add_include_path(files[i].tccState, "tinycc/include");
+    #ifdef RGFW_WINDOWS
+    tcc_add_include_path(files[i].tccState, "tinycc/win32/include");
+    tcc_add_include_path(files[i].tccState, "tinycc/win32/include/winapi");
+    #endif
     tcc_add_library_path(files[i].tccState, "tinycc");
+    tcc_define_symbol(files[i].tccState, "EXCEPTION_ROUTINE", "");
+    tcc_define_symbol(files[i].tccState, "RSGL_sendMessage", "");
 
     if (tcc_add_file(files[i].tccState, fileName) == -1) {
         files[i].mainFunc = NULL;
