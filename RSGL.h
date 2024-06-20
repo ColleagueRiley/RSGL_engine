@@ -433,12 +433,6 @@ extern "C" {
 
 #include <windef.h>
 
-#ifdef __MINGW32__
-#include <xinput.h>
-#else
-#include <XInput.h>
-#endif
-
 #else 
 #if defined(__unix__) || defined(RGFW_MACOS_X11) || defined(RGFW_X11)
 #define RGFW_MACOS_X11
