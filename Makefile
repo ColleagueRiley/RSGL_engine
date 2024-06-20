@@ -2,7 +2,7 @@ CC = gcc
 TCC = tinycc/tcc
 
 LIBS := -static -lgdi32 -lm -lopengl32 -lwinmm -lm
-WINTCC = -I./tinycc/win32/include -I./tinycc/win32/include/winapi
+WINTCC = -I./tinycc/win32/include -I./tinycc/win32/include/winapi -D EXCEPTION_ROUTINE
 EXT = .exe
 EXT_TCC = .dll
 
@@ -23,7 +23,7 @@ endif
 ifeq ($(detected_OS),Windows)
 	LIBS := -static -lshell32 -lwinmm -lgdi32 -lopengl32
 	EXT = .exe
-	WINTCC = -I./tinycc/win32/include -I./tinycc/win32/include/winapi
+	WINTCC = -I./tinycc/win32/include -I./tinycc/win32/include/winapi -D EXCEPTION_ROUTINE
 	EXT_TCC = .dll
 endif
 ifeq ($(detected_OS),Darwin)        # Mac OS X
