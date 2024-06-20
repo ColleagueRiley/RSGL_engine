@@ -35,11 +35,11 @@ ifeq ($(detected_OS),Linux)
 endif
 
 RSGL_engine: source/* include/*
-	#make tinycc/libtcc$(EXT_TCC)
+	make tinycc/libtcc$(EXT_TCC)
 	$(CC) source/main.c $(LIBS) -I./include -I./tinycc tinycc/libtcc$(EXT_TCC) -o $@
 
 debug:
-	#make tinycc/libtcc$(EXT_TCC)
+	make tinycc/libtcc$(EXT_TCC)
 	$(CC) source/main.c $(LIBS) -I./include -I./tinycc tinycc/libtcc$(EXT_TCC) -o RSGL_engine
 	./RSGL_engine$(EXT) test.c test2.c
 
