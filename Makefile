@@ -21,15 +21,15 @@ else
 endif
 
 ifeq ($(detected_OS),Windows)
-	LIBS := -static -lshell32 -lwinmm -lgdi32 -lopengl32 -I./tinycc/win32/include/winapi
+	LIBS := -static -lshell32 -lwinmm -lgdi32 -lopengl32
 	EXT = .exe
-	WINTCC = -I./tinycc/win32/include
+	WINTCC = -I./tinycc/win32/include -I./tinycc/win32/include/winapi
 	EXT_TCC = .dll
 endif
 ifeq ($(detected_OS),Darwin)        # Mac OS X
 	LIBS := -lm -framework Foundation -framework AppKit -framework OpenGL -framework CoreVideo
 	EXT = 
-	WINTCC = 
+	WINTCC = -U __unix__ 
 	EXT_TCC = .a
 endif
 ifeq ($(detected_OS),Linux)
