@@ -74,16 +74,27 @@ typedef RSGL_pointF vector2;
 #else
 
 #if !defined(u8)
-    #include <stdint.h>
+	#if defined(_MSC_VER) || defined(__SYMBIAN32__)
+		typedef unsigned char 	u8;
+		typedef signed char		i8;
+		typedef unsigned short  u16;
+		typedef signed short 	i16;
+		typedef unsigned int 	u32;
+		typedef signed int		i32;
+		typedef unsigned long	u64;
+		typedef signed long		i64;
+	#else
+		#include <stdint.h>
 
-    typedef uint8_t     u8;
-	typedef int8_t      i8;
-	typedef uint16_t   u16;
-	typedef int16_t    i16;
-	typedef uint32_t   u32;
-	typedef int32_t    i32;
-	typedef uint64_t   u64;
-	typedef int64_t    i64;
+		typedef uint8_t     u8;
+		typedef int8_t      i8;
+		typedef uint16_t   u16;
+		typedef int16_t    i16;
+		typedef uint32_t   u32;
+		typedef int32_t    i32;
+		typedef uint64_t   u64;
+		typedef int64_t    i64;
+	#endif
 #endif
 
 #ifndef RPHS_VECTOR_DEFINED
@@ -221,6 +232,10 @@ RPHYSDEF RSGL_triangle RPhys_shape_getTriangle(RPhys_shape shape);
 RPHYSDEF RSGL_point RPhys_shape_getPoint(RPhys_shape shape);
 #endif
 
+#ifndef RPHYS_BODY_SECRET
+#define RPHYS_BODY_SECRET void*
+#endif
+
 typedef struct RPhys_body {
     RPhys_shape shape; /* shape of object */
     u8 floating; /* not affected by gravity */
@@ -231,7 +246,10 @@ typedef struct RPhys_body {
     float sFrition;
     bool elastic;
 
+    RPHYS_BODY_SECRET secret; /* secret data for the user */
+
     u16 index; /* index of body (in array) */
+    u8 pointer; /* if it's a pointer or allocated by RPhys (don't edit by hand) */
 } RPhys_body;
 
 /* get current acceleration of an object (based on force and mass) (in px / s ^ 2 (pixels per second per second)) */
@@ -239,10 +257,16 @@ RPHYSDEF vector2 RPhys_body_getAcceleration(RPhys_body* body);
 
 /* add new body to body array */
 RPHYSDEF void RPhys_addBody(RPhys_body* body);
+/* add a new body to the body array, data only, no pointer */
+RPHYSDEF void RPhys_addBodyNoPtr(RPhys_body body);
 /* add multiple bodies to the body array */
 RPHYSDEF void RPhys_addBodies(RPhys_body* bodies, size_t count);
 /* remove body from body array */
 RPHYSDEF void RPhys_removeBody(RPhys_body* body);
+/* get the body at a index of the body array */
+RPHYSDEF RPhys_body* RPhys_getBody(size_t index);
+/* get the length of the body array */
+RPHYSDEF size_t RPhys_getBodyCount(void);
 
 #ifdef RSGL_H
 /* draw the bodies in the body array (guesses shape of polygon) */
@@ -318,12 +342,11 @@ void RPhys_step(double deltaTime, void (*__bodyCollideCallback)(RPhys_body*, RPh
             case RPHYS_RECT: case RPHYS_RECT_POLYGON:
                 body->shape.r.v = RPhys_addVector2(body->shape.c.v, body->velocity);
                 break;
-            case RPHYS_POLYGON: {
+            case RPHYS_POLYGON:
                 size_t v;
                 for (v = 0; v < body->shape.vertexCount; v++)
                     body->shape.vertices[v] = RPhys_addVector2(body->shape.vertices[v], body->velocity);
                 break;
-            }
             case RPHYS_CIRCLE:
                 body->shape.c.v = RPhys_addVector2(body->shape.c.v, body->velocity);
                 break;
@@ -455,6 +478,14 @@ void RPhys_step(double deltaTime, void (*__bodyCollideCallback)(RPhys_body*, RPh
 }
 
 void RPhys_free(void) {
+    size_t i;
+    for (i = 0; i < RPhys_len; i++) {
+        if (RPhys_bodies[i]->pointer)
+            continue;
+        
+        free(RPhys_bodies[i]);
+    }
+
     RPHYS_FREE(RPhys_bodies);
 }
 
@@ -760,10 +791,23 @@ void RPhys_addBody(RPhys_body* body) {
     body->force = (vector2){0, 0};
     body->sFrition = 0.0f;
     body->shape.angle = 0.0f;
+    body->pointer = true;
 
     RPhys_bodies[body->index] = body;
 
     RPhys_len += 1; 
+}
+
+void RPhys_addBodyNoPtr(RPhys_body newBody) {
+    RPhys_body* body = (RPhys_body*)malloc(sizeof(RPhys_body));
+
+    body->shape = newBody.shape;
+    body->floating = newBody.floating;
+    body->elastic = newBody.elastic;
+    body->secret = newBody.secret;
+
+    RPhys_addBody(body);
+    body->pointer = false;
 }
 
 void RPhys_addBodies(RPhys_body* bodies, size_t count) {
@@ -776,6 +820,12 @@ void RPhys_removeBody(RPhys_body* body) {
     RPhys_len -= 1;
     memcpy(RPhys_bodies + body->index, RPhys_bodies + body->index + 1, (RPhys_len - body->index) * sizeof(RPhys_body**));
 }
+
+RPhys_body* RPhys_getBody(size_t index) {
+    return RPhys_bodies[index];
+}
+
+size_t RPhys_getBodyCount(void) { return RPhys_len; }
 
 #ifdef RSGL_H
 void RPhys_drawBodies(void) { RPhys_drawBodiesPro(NULL, NULL); }
