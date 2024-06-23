@@ -2,15 +2,17 @@
 #define RSGL_IMPLEMENTATION
 #include "RSGL.h"
 
-#define RPHYS_IMPLEMENTATION
-#include "rphys.h"
-
-#include "RSGL_tcc.c"
-
 typedef struct sprite {
     RSGL_point initPoint;
     bool pressed;
 } sprite;
+
+#define RPHYS_BODY_SECRET sprite
+
+#define RPHYS_IMPLEMENTATION
+#include "rphys.h"
+
+#include "RSGL_tcc.c"
 
 int main(int argc, char ** argv) { 
     if (argc < 2) {
@@ -25,9 +27,6 @@ int main(int argc, char ** argv) {
     RSGL_window* win = RSGL_createWindow("name", (RSGL_rect){0, 0, 1000, 800}, RSGL_CENTER);    
 
     RSGL_setFont(RSGL_loadFont("SuperEasy.ttf"));
-
-    sprite* sprites = (sprite*)RPHYS_MALLOC(sizeof(sprite) * RPHYS_BODIES_INIT);
-    
      
     while (RGFW_window_shouldClose(win) == false) {
         while (RSGL_window_checkEvent(win)) {
@@ -51,10 +50,9 @@ int main(int argc, char ** argv) {
                         u32 index = 0;
                         for (index = 0; index < RPhys_len; index++) {
                             RPhys_body* body = RPhys_bodies[index];
-                            sprite* sprite = &sprites[index]; 
 
-                            sprite->pressed = RSGL_rectCollidePointF(RPhys_shape_getRect(body->shape), RSGL_POINTF(win->event.point.x, win->event.point.y));
-                            sprite->initPoint = win->event.point;
+                            body->secret.pressed = RSGL_rectCollidePointF(RPhys_shape_getRect(body->shape), RSGL_POINTF(win->event.point.x, win->event.point.y));
+                            body->secret.initPoint = win->event.point;
                         }
                     } 
 
@@ -64,15 +62,14 @@ int main(int argc, char ** argv) {
                     u32 index = 0;
                     for (index = 0; index < RPhys_len; index++) {
                         RPhys_body* body = RPhys_bodies[index];
-                        sprite* sprite = &sprites[index]; 
                         
-                        if (sprite->pressed == false) 
+                        if (body->secret.pressed == false) 
                             continue;
                         
-                        body->shape.r.v = RSGL_POINTF(body->shape.r.v.x + (float)(win->event.point.x - sprite->initPoint.x),
-                                                            body->shape.r.v.y + (float)(win->event.point.y - sprite->initPoint.y));
+                        body->shape.r.v = RSGL_POINTF(body->shape.r.v.x + (float)(win->event.point.x - body->secret.initPoint.x),
+                                                            body->shape.r.v.y + (float)(win->event.point.y - body->secret.initPoint.y));
 
-                        sprite->initPoint = win->event.point;   
+                        body->secret.initPoint = win->event.point;   
                     }
 
                     break;
@@ -82,9 +79,8 @@ int main(int argc, char ** argv) {
                     u32 index = 0;
                     for (index = 0; index < RPhys_len; index++) {
                         RPhys_body* body = RPhys_bodies[index];
-                        sprite* sprite = &sprites[index]; 
 
-                        sprite->pressed = false;
+                        body->secret.pressed = false;
                     }
                     
                     break;
@@ -124,7 +120,6 @@ int main(int argc, char ** argv) {
         RSGL_window_clear(win, RSGL_RGB(255, 255, 255));
     }
     
-    free(sprites);
     RPhys_free();
 
     u32 index = 0;
